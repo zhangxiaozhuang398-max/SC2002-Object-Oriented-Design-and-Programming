@@ -3,12 +3,15 @@
 Requires JDK 17 or newer. Everything compiles and runs offline with the Java standard library.
 
 Windows, from this folder:
-```powershell
-.\run.ps1
-.\run.ps1 --replay examples/victory.txt
-.\run.ps1 --replay examples/defeat.txt
-.\test.ps1
+```bat
+run.bat
+run.bat --replay examples\victory.txt
+run.bat --replay examples\defeat.txt
+test.bat
 ```
+
+The `.bat` files wrap `run.ps1` / `test.ps1` and bypass the PowerShell execution
+policy, which otherwise refuses to load an unsigned script ("not digitally signed").
 
 macOS/Linux: `sh run.sh`, `sh run.sh --replay examples/victory.txt`, `sh test.sh`.
 Script paths are resolved relative to this stage, so invoking a script from the repository root also works.

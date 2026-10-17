@@ -10,12 +10,16 @@ Install JDK 17 or newer. No Maven, Gradle, external libraries, server or network
 
 Windows, from the repository root:
 
-```powershell
-.\stage-3\run.ps1
-.\stage-3\run.ps1 --replay examples/victory.txt
-.\stage-3\run.ps1 --replay examples/defeat.txt
-.\verify.ps1
+```bat
+stage-3\run.bat
+stage-3\run.bat --replay examples\victory.txt
+stage-3\run.bat --replay examples\defeat.txt
+verify.bat
 ```
+
+The `.bat` files wrap the `.ps1` scripts and pass `-ExecutionPolicy Bypass`, because
+PowerShell otherwise refuses to load an unsigned script ("not digitally signed").
+`.ps1` equivalents: `.\stage-3\run.ps1` and `.\verify.ps1`.
 
 macOS/Linux:
 

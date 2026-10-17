@@ -3,12 +3,15 @@
 Requires JDK 17 or newer. No libraries, build service, or network access are required.
 
 From this folder on Windows:
-```powershell
-.\run.ps1
-.\run.ps1 --replay examples/victory.txt
-.\run.ps1 --replay examples/defeat.txt
-.\test.ps1
+```bat
+run.bat
+run.bat --replay examples\victory.txt
+run.bat --replay examples\defeat.txt
+test.bat
 ```
+
+The `.bat` files wrap `run.ps1` / `test.ps1` and bypass the PowerShell execution
+policy, which otherwise refuses to load an unsigned script ("not digitally signed").
 
 On macOS or Linux use `sh run.sh`, `sh run.sh --replay examples/victory.txt`, and `sh test.sh`.
 
