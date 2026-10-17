@@ -198,6 +198,19 @@ body {
 .actionbar-bottom { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
 .toast { flex: 1; color: var(--ink-soft); font-size: 14px; min-height: 20px; }
 .toast.error { color: #C96F6F; font-weight: 650; }
+.undo {
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .15s ease, transform .1s ease;
+}
+.undo:hover:not(:disabled) { border-color: var(--mint); transform: translateY(-1px); }
+.undo:disabled { opacity: .4; cursor: not-allowed; }
 .end-turn {
   background: var(--mint);
   border: none;

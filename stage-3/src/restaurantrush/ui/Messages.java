@@ -117,6 +117,10 @@ final class Messages {
                     "本回合开启欢乐时光。"),
             rule("New game started\\.",
                     "新的一局开始。"),
+            rule("Undid the last step\\.",
+                    "已撤销上一步。"),
+            rule("Nothing to undo yet\\.",
+                    "已经回到最开始，没有可以撤销的操作了。"),
 
             // ---- end-of-turn events ----
             rule("Customer (\\d+) is READY_TO_PAY; payment is possible next turn\\.",

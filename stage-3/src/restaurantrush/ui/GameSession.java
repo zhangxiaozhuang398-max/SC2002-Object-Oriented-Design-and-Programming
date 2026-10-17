@@ -31,6 +31,9 @@ public final class GameSession {
 
     private GameEngine engine;
 
+    /** Every accepted command, in order, so the boundary can replay the game. */
+    private final List<Action> history = new ArrayList<>();
+
     private boolean turnOpen;
     private boolean hostAssigned;
     private boolean waiterAssigned;
@@ -67,10 +70,19 @@ public final class GameSession {
      * @return a JSON object {@code {ok, message, events, state}}
      */
     public synchronized String actionResponse(String type, String task, int id, boolean on, String lang) {
+        String key = type == null ? "" : type.toLowerCase(Locale.ROOT);
+        if ("undo".equals(key)) {
+            return undoResponse(lang);
+        }
         boolean ok = true;
         String message;
         try {
             message = dispatch(type, task, id, on);
+            if ("reset".equals(key)) {
+                history.clear();
+            } else {
+                history.add(new Action(key, task, id, on));
+            }
         } catch (IllegalArgumentException | IllegalStateException refused) {
             ok = false;
             message = refused.getMessage() == null ? "Illegal action." : refused.getMessage();
@@ -88,6 +100,59 @@ public final class GameSession {
         return Json.array(lastEvents.stream()
                 .map(event -> Json.string(Messages.localise(event, lang)))
                 .toList());
+    }
+
+    /**
+     * Steps back one accepted action.
+     *
+     * <p>The engine has no undo, and adding one would mean copying its whole object graph on
+     * every move. The boundary instead keeps the actions it already accepted and replays them
+     * into a fresh engine, which reproduces the earlier state exactly: the game has no
+     * randomness, and an order id is derived from its customer, so nothing depends on how many
+     * objects were created before. Replaying a whole 18-turn game costs well under a
+     * millisecond.</p>
+     */
+    private String undoResponse(String lang) {
+        boolean ok = !history.isEmpty();
+        String message;
+        if (ok) {
+            history.remove(history.size() - 1);
+            rebuild();
+            message = "Undid the last step.";
+        } else {
+            message = "Nothing to undo yet.";
+        }
+        lastMessage = message;
+        return new Json.Obj()
+                .bool("ok", ok)
+                .str("message", Messages.localise(message, lang))
+                .value("events", eventsJson(lang))
+                .value("state", stateJson(message, lang))
+                .toString();
+    }
+
+    /** Starts a fresh game and replays every action still in the history. */
+    private void rebuild() {
+        newGame();
+        for (int index = 0; index < history.size(); index++) {
+            Action action = history.get(index);
+            dispatch(action.type, action.task, action.id, action.on);
+        }
+    }
+
+    /** One accepted command, kept only so that it can be replayed. */
+    private static final class Action {
+        private final String type;
+        private final String task;
+        private final int id;
+        private final boolean on;
+
+        private Action(String type, String task, int id, boolean on) {
+            this.type = type;
+            this.task = task;
+            this.id = id;
+            this.on = on;
+        }
     }
 
     private String dispatch(String type, String task, int id, boolean on) {
@@ -162,6 +227,7 @@ public final class GameSession {
                 .num("turn", engine.getTurn())
                 .num("maxTurns", GameSetup.MAX_TURNS)
                 .str("phase", phase())
+                .bool("canUndo", !history.isEmpty())
                 .num("revenueCents", state.getRevenueCents())
                 .num("paidCount", state.getPaidCount())
                 .num("servedCount", state.getServedCount())
@@ -288,27 +354,29 @@ public final class GameSession {
      * reviewed with realistic data instead of an empty turn 1.
      *
      * <p>Used only by {@code --preview}; a normal launch starts a genuinely new game.
-     * Every call is an ordinary public engine call, so no rule is bypassed.</p>
+     * The script goes through the same replay path as {@code undo}, so the preview state
+     * can be stepped back like any other.</p>
      */
     public synchronized void seedPreview() {
-        turn(false, 1, WaiterTask.ORDER, 1, 1);
-        turn(false, 0, WaiterTask.SERVE, 1, 0);
-        turn(false, 0, WaiterTask.WAIT, 0, 0);
-        turn(false, 2, WaiterTask.ORDER, 2, 2);
-        turn(false, 0, WaiterTask.SERVE, 2, 0);
-        turn(false, 0, WaiterTask.WAIT, 0, 0);
-        turn(false, 3, WaiterTask.ORDER, 3, 3);
-        turn(false, 0, WaiterTask.WAIT, 0, 3);
-        turn(false, 0, WaiterTask.WAIT, 0, 0);
-        engine.startTurn(false);
-        turnOpen = true;
+        history.clear();
+        previewTurn(false, 1, WaiterTask.ORDER, 1, 1);
+        previewTurn(false, 0, WaiterTask.SERVE, 1, 0);
+        previewTurn(false, 0, WaiterTask.WAIT, 0, 0);
+        previewTurn(false, 2, WaiterTask.ORDER, 2, 2);
+        previewTurn(false, 0, WaiterTask.SERVE, 2, 0);
+        previewTurn(false, 0, WaiterTask.WAIT, 0, 0);
+        previewTurn(false, 3, WaiterTask.ORDER, 3, 3);
+        previewTurn(false, 0, WaiterTask.WAIT, 0, 3);
+        previewTurn(false, 0, WaiterTask.WAIT, 0, 0);
+        history.add(new Action("start", null, 0, false));
+        rebuild();
     }
 
-    private void turn(boolean activate, int hostSeat, WaiterTask waiterTask, int waiterId, int cookOrder) {
-        engine.startTurn(activate);
-        engine.assignHost(hostSeat);
-        engine.assignWaiter(waiterTask, waiterId);
-        engine.assignChef(cookOrder);
-        engine.finishTurn();
+    private void previewTurn(boolean activate, int hostSeat, WaiterTask waiterTask, int waiterId, int cookOrder) {
+        history.add(new Action("start", null, 0, activate));
+        history.add(new Action("host", hostSeat == 0 ? "wait" : "seat", hostSeat, false));
+        history.add(new Action("waiter", waiterTask.name().toLowerCase(Locale.ROOT), waiterId, false));
+        history.add(new Action("chef", cookOrder == 0 ? "wait" : "cook", cookOrder, false));
+        history.add(new Action("finish", null, 0, false));
     }
 }

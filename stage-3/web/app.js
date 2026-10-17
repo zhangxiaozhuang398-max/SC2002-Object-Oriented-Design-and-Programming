@@ -65,6 +65,7 @@ const I18N = {
     serve: '🍽️ 上菜',
     cook: '🍳 做',
     wait: '💤 等待',
+    undo: '↶ 撤销',
     hint: '点一个按钮就是做一次决定；不合法的操作会被拦下并告诉你原因。三个岗位都决定好之后，结束本回合。'
   },
   en: {
@@ -102,6 +103,7 @@ const I18N = {
     serve: '🍽️ Serve',
     cook: '🍳 Cook',
     wait: '💤 Wait',
+    undo: '↶ Undo',
     hint: 'Each click is one decision; illegal moves are rejected with the reason. End the turn once all three staff have decided.'
   }
 };
@@ -338,8 +340,11 @@ function renderActions() {
   const startPanel = document.getElementById('startPanel');
   const actionRows = document.getElementById('actionRows');
   const endTurn = document.getElementById('endTurnBtn');
+  const undo = document.getElementById('undoBtn');
   actionRows.innerHTML = '';
   endTurn.style.display = 'none';
+  // Only reflects what the server reports; the page decides nothing about the game.
+  undo.disabled = !state.canUndo;
 
   if (state.phase === 'FINISHED') {
     startPanel.hidden = false;
@@ -366,6 +371,7 @@ function renderActions() {
 }
 
 function renderStartPanel(panel) {
+  panel.innerHTML = '';
   const title = document.createElement('div');
   title.className = 'start-title';
   title.textContent = tr('startDay', { n: state.turn + 1 });
@@ -428,6 +434,7 @@ function chefButtons() {
 // ------------------------------------------------------------------
 
 document.getElementById('endTurnBtn').addEventListener('click', () => act({ type: 'finish' }));
+document.getElementById('undoBtn').addEventListener('click', () => act({ type: 'undo' }));
 
 document.querySelectorAll('.lang-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
