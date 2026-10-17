@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google" content="notranslate">
+<title>Restaurant Rush — Project documentation</title>
+<meta name="description" content="Restaurant Rush — a turn-based restaurant management game in Java, SC2002 group assignment. Documentation in English and Chinese.">
+<style>
+  :root {
+    --cream: #FFF9F2;
+    --card: #FFFFFF;
+    --ink: #433A32;
+    --ink-soft: #8D8279;
+    --mint: #A8D5BA;
+    --mint-deep: #4E9E76;
+    --peach: #FFD3B6;
+    --butter: #FFF1A8;
+    --line: #F1E7DC;
+    --shadow: 0 10px 26px rgba(189, 160, 130, .15);
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei",
+                 "PingFang SC", system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* A language block is hidden with the HTML hidden attribute; make sure no
+     display rule can override it. */
+  [hidden] { display: none !important; }
+
+  a { color: var(--mint-deep); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---------- header ---------- */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(255, 255, 255, .92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; }
+  .brand .logo { font-size: 22px; }
+  .header-links { display: flex; gap: 16px; font-size: 14px; margin-left: auto; }
+  .header-links a { color: var(--ink-soft); }
+  .header-links a:hover { color: var(--mint-deep); }
+
+  .lang-switch {
+    display: flex;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px;
+    flex: none;
+  }
+  .lang-switch button {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .lang-switch button:hover { color: var(--ink); }
+  .lang-switch button.active { background: var(--mint); color: var(--ink); }
+
+  /* ---------- layout ---------- */
+  .wrap { max-width: 1020px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+  main { padding-top: 30px; padding-bottom: 40px; }
+
+  h1 { font-size: 34px; line-height: 1.2; margin: 0 0 6px; }
+  .lede { color: var(--ink-soft); margin: 0 0 24px; font-size: 16px; }
+
+  section {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px 26px;
+    margin-bottom: 18px;
+  }
+  h2 {
+    font-size: 20px;
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px dashed var(--line);
+  }
+  h3 { font-size: 16px; margin: 20px 0 8px; }
+  section > :last-child { margin-bottom: 0; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+
+  code {
+    font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-size: 13.5px;
+    background: rgba(67, 58, 50, .06);
+    border-radius: 6px;
+    padding: 1.5px 6px;
+  }
+  pre {
+    background: #FBF5EE;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--mint);
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+  }
+  pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 14px;
+    font-size: 14.5px;
+  }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #F7FBF8; font-weight: 700; }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0 0 24px; }
+  figure { margin: 0; }
+  figure img {
+    width: 100%;
+    display: block;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+  figcaption { font-size: 13px; color: var(--ink-soft); text-align: center; margin-top: 6px; }
+
+  .note {
+    background: #FFFDF3;
+    border: 1px solid var(--butter);
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-size: 14.5px;
+  }
+  .note p:last-child { margin-bottom: 0; }
+
+  footer { padding: 8px 0 40px; color: var(--ink-soft); font-size: 13.5px; text-align: center; }
+
+  @media (max-width: 760px) {
+    .shots { grid-template-columns: 1fr; }
+    .header-links { display: none; }
+    h1 { font-size: 27px; }
+    section { padding: 18px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div class="brand"><span class="logo">🍽️</span><span>Restaurant Rush</span></div>
+    <nav class="header-links">
+      <a href="https://github.com/zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming/blob/main/README.md" target="_blank" rel="noopener">README</a>
+    </nav>
+    <div class="lang-switch" role="group" aria-label="Language / 语言">
+      <button type="button" data-lang-btn="en">English</button>
+      <button type="button" data-lang-btn="zh">中文</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============================ ENGLISH ============================ -->
+<article data-lang="en">
+
+  <h1>Restaurant Rush</h1>
+  <p class="lede">A turn-based restaurant management game in Java · SC2002 Object-Oriented Design &amp; Programming</p>
+
+  <div class="shots">
+    <figure>
+      <img src="ui-dashboard.png" alt="The web UI in the middle of a game">
+      <figcaption>Dashboard, mid-game</figcaption>
+    </figure>
+    <figure>
+      <img src="ui-start.png" alt="The web UI at the start of a new game">
+      <figcaption>A new game</figcaption>
+    </figure>
+  </div>
+
+  <section>
+    <h2>What this is</h2>
+    <p>Restaurant Rush is a turn-based restaurant management game in Java. The player is the
+      manager: staff time is scarce, so deciding <strong>who gets served first</strong> is the
+      whole game. It comes in three runnable stages, each a git tag, plus an optional browser
+      front-end.</p>
+    <ul>
+      <li>Java 17 or newer. No Maven, no Gradle, no external libraries, no network access.</li>
+      <li>Two interfaces over the same rules: a <strong>command-line game</strong> (primary) and an
+        optional <strong>web UI</strong>.</li>
+    </ul>
+    <h3>Repositories</h3>
+    <ul>
+      <li>Group repository:
+        <a href="https://github.com/DasbootU9607/SC2002-Object-Oriented-Design-and-Programming" target="_blank" rel="noopener">DasbootU9607/SC2002-Object-Oriented-Design-and-Programming</a></li>
+      <li>Fork that adds the optional web UI:
+        <a href="https://github.com/zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming" target="_blank" rel="noopener">zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming</a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Quick start: one launcher</h2>
+    <p>Windows — double-click <code>start.bat</code>, or from a terminal:</p>
+    <pre><code>start.bat</code></pre>
+    <p>macOS / Linux:</p>
+    <pre><code>sh start.sh</code></pre>
+    <table>
+      <thead><tr><th class="num">#</th><th>Action</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>Web UI</td><td>Starts the local server and opens the browser</td></tr>
+        <tr><td class="num">2</td><td>Web UI layout preview</td><td>Same, but with a scripted mid-game state</td></tr>
+        <tr><td class="num">3</td><td>Command line, Stage 3</td><td>The full game</td></tr>
+        <tr><td class="num">4</td><td>Command line, Stage 2</td><td>VIP and Critic customers</td></tr>
+        <tr><td class="num">5</td><td>Command line, Stage 1</td><td>Basic game</td></tr>
+        <tr><td class="num">6</td><td>All tests</td><td>368 assertions across the three stages</td></tr>
+      </tbody>
+    </table>
+    <p>Every entry also works as a direct command, which is convenient for scripts:</p>
+    <pre><code>start.bat web       :: web UI, fresh game
+start.bat preview   :: web UI, mid-game state
+start.bat cli       :: Stage 3 in the terminal
+start.bat cli2      :: Stage 2
+start.bat cli1      :: Stage 1
+start.bat test      :: all three test suites</code></pre>
+  </section>
+
+  <section>
+    <h2>Web UI (front-end)</h2>
+    <p>The browser front-end is an extra boundary object, added after the <code>stage-3</code> tag.
+      It contains <strong>no game rules</strong>: the page only draws <code>GET /api/state</code>
+      and forwards each click to <code>POST /api/action</code>, and whatever the engine replies is
+      shown verbatim — including the reason a move was rejected.</p>
+    <pre><code>stage-3\web.bat              :: same as: start.bat web
+stage-3\web.bat --preview    :: same as: start.bat preview</code></pre>
+    <ul>
+      <li>Served from <code>http://127.0.0.1:8765</code> — the next free port if that one is busy —
+        and the browser opens automatically.</li>
+      <li>Uses the JDK's built-in <code>jdk.httpserver</code>, so it is still dependency-free and
+        fully offline; nothing ever leaves the machine.</li>
+      <li>Panels for the waiting queue, the two tables, the kitchen and the customers who have
+        left, with a button per decision: seat, order, serve, cook, wait.</li>
+      <li>Chinese / English toggle in the top-right corner; the choice is remembered.</li>
+      <li><code>--no-browser</code> starts the server without opening a browser.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Command-line game (the primary interface)</h2>
+    <pre><code>stage-3\run.bat
+stage-3\run.bat --replay examples\victory.txt
+stage-3\run.bat --replay examples\defeat.txt</code></pre>
+    <p>Replace <code>stage-3</code> with <code>stage-1</code> or <code>stage-2</code> for the
+      earlier stages. Each stage folder is self-contained — <code>src</code>, <code>test</code>,
+      <code>examples</code>, its own scripts and README — so it can be built and played on its own.</p>
+    <p>macOS / Linux: <code>sh stage-3/run.sh</code>,
+      <code>sh stage-3/run.sh --replay examples/victory.txt</code>.</p>
+    <p>A direct build, without any script:</p>
+    <pre><code>mkdir -p build/classes
+javac -encoding UTF-8 --release 17 -d build/classes src/restaurantrush/*.java
+java -cp build/classes restaurantrush.Main</code></pre>
+  </section>
+
+  <section>
+    <h2>Tests</h2>
+    <pre><code>verify.bat          :: same as: start.bat test</code></pre>
+    <p>Runs the three dependency-free suites: 99 + 110 + 159 = <strong>368 assertions</strong>,
+      exit code 0 when everything passes. They cover the brief's Pasta timeline, staff capacity,
+      invalid input retries, queue and table rules, abandonment and cancellation, payment order,
+      price and satisfaction snapshots, both endings, polymorphic customer behaviour, Host actions,
+      combo rounding, and Happy Hour duration and lock-in.</p>
+  </section>
+
+  <section>
+    <h2>Project layout</h2>
+    <pre><code>.
+├─ start.bat / start.ps1 / start.sh     one-stop launcher
+├─ verify.bat / verify.ps1 / verify.sh  all three test suites
+├─ docs/                                this page and the screenshots
+├─ stage-1/  stage-2/  stage-3/         one self-contained snapshot per stage
+│    ├─ src/restaurantrush/             Java sources
+│    ├─ test/restaurantrush/            dependency-free test suite
+│    ├─ examples/                       victory and defeat replays
+│    └─ run / test scripts, README
+└─ stage-3/
+     ├─ src/restaurantrush/ui/          web boundary (server, session, JSON writer)
+     └─ web/                            index.html, style.css, app.js</code></pre>
+  </section>
+
+  <section>
+    <h2>Base setting</h2>
+    <table>
+      <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Turns</td><td>18 (the game always plays all of them)</td></tr>
+        <tr><td>Tables</td><td>2</td></tr>
+        <tr><td>Staff</td><td>Waiter ×1 (one task per turn), Chef ×1 (one preparation unit per turn), Cashier ×1 (one payment per turn)</td></tr>
+        <tr><td>Arrivals</td><td>One customer on turns 1, 4, 7, 10, 13 and 16</td></tr>
+        <tr><td>Victory</td><td>at least 4 paid customers <strong>and</strong> revenue ≥ $45.00 <strong>and</strong> average paid satisfaction ≥ 60</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>Menu item</th><th class="num">Price</th><th class="num">Preparation units</th></tr></thead>
+      <tbody>
+        <tr><td>Salad</td><td class="num">$9.00</td><td class="num">1</td></tr>
+        <tr><td>Burger</td><td class="num">$15.00</td><td class="num">1</td></tr>
+        <tr><td>Pasta</td><td class="num">$18.00</td><td class="num">2</td></tr>
+        <tr><td>Combo (Salad + Pasta)</td><td class="num">$24.30</td><td class="num">3</td></tr>
+      </tbody>
+    </table>
+    <p>Customers choose their own meals by a documented deterministic rule. Prices are integer
+      cents and are locked when an order is taken. The average satisfaction uses the value recorded
+      at the moment each customer pays.</p>
+  </section>
+
+  <section>
+    <h2>The three stages</h2>
+    <table>
+      <thead><tr><th>Folder</th><th>Git tag</th><th>Adds</th><th class="num">Assertions</th></tr></thead>
+      <tbody>
+        <tr><td><code>stage-1/</code></td><td><code>stage-1</code></td><td>Basic game with Regular customers</td><td class="num">99</td></tr>
+        <tr><td><code>stage-2/</code></td><td><code>stage-2</code></td><td>VIP and Critic customers</td><td class="num">110</td></tr>
+        <tr><td><code>stage-3/</code></td><td><code>stage-3</code></td><td>Host, ComboMeal, Happy Hour</td><td class="num">159</td></tr>
+      </tbody>
+    </table>
+    <p>Repeated source files between stage folders are intentional: each stage is an independent,
+      self-contained snapshot. The tags are annotated and sit on successive commits, so
+      <code>git switch --detach stage-1</code> shows only Stage 1.</p>
+  </section>
+
+  <section>
+    <h2>Stage 1 → Stage 2</h2>
+    <p>New source files: <code>VIPCustomer.java</code>, <code>CriticCustomer.java</code>.</p>
+    <p>Changed source: <code>GameSetup.java</code> registers the mixed arrival schedule and changes
+      the stage banner; <code>GameTests.java</code> adds polymorphism checks and updates the replay
+      expectations. No source files were deleted — <code>GameEngine</code>, the staff classes,
+      <code>ConsoleUI</code> and the existing model classes are unchanged, which is the point: new
+      customer behaviour arrives without touching the turn sequence.</p>
+  </section>
+
+  <section>
+    <h2>Stage 2 → Stage 3</h2>
+    <p>New source files: <code>Host.java</code>, <code>ComboMeal.java</code>,
+      <code>HappyHourPolicy.java</code>.</p>
+    <table>
+      <thead><tr><th>Changed source</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td><code>GameSetup.java</code></td><td>Register the combo and update the stage banner</td></tr>
+        <tr><td><code>Menu.java</code></td><td>Store combo choices and implement the documented selection rule</td></tr>
+        <tr><td><code>Customer.java</code></td><td>Encapsulate satisfaction recovery without reviving departed customers</td></tr>
+        <tr><td><code>GameState.java</code></td><td>Delegate price quotations to the active pricing policy</td></tr>
+        <tr><td><code>GameEngine.java</code></td><td>Add the Host phase and policy hooks around the existing turn sequence</td></tr>
+        <tr><td><code>ConsoleUI.java</code></td><td>Collect the new choices and display the remaining Happy Hour duration</td></tr>
+      </tbody>
+    </table>
+    <p>No source files were deleted. Order lifecycle, preparation, serving, payment, table release,
+      the customer subclasses, integer money and the result rules are unchanged.</p>
+    <p>Because each stage is a self-contained folder, GitHub shows these transitions as added
+      snapshots. For a focused source-only comparison locally:</p>
+    <pre><code>git diff --no-index stage-1/src stage-2/src
+git diff --no-index stage-2/src stage-3/src</code></pre>
+    <p>(A diff exit code of 1 means differences were found — not a failed build.)</p>
+  </section>
+
+  <section>
+    <h2>Web UI as design evidence</h2>
+    <p>The web front-end was added after <code>stage-3</code> and is a second boundary
+      implementation over the same control and domain classes. Adding it required <strong>no change
+      to any rule class</strong>; the only touch on existing code was extracting the three victory
+      targets in <code>GameResult</code> into named constants, so that the rule and the UI read the
+      same numbers from one place. That is a concrete, checkable example of keeping rules out of
+      the UI.</p>
+  </section>
+
+  <section>
+    <h2>Reproducible runs</h2>
+    <table>
+      <thead><tr><th>Replay</th><th class="num">Paid</th><th class="num">Served</th><th class="num">Revenue</th><th class="num">Paid satisfaction</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr><td>Stage 1 victory</td><td class="num">5</td><td class="num">5</td><td class="num">$66.00</td><td class="num">79.20</td><td>VICTORY</td></tr>
+        <tr><td>Stage 2 victory</td><td class="num">5</td><td class="num">5</td><td class="num">$65.10</td><td class="num">78.00</td><td>VICTORY</td></tr>
+        <tr><td>Stage 3 victory</td><td class="num">5</td><td class="num">6</td><td class="num">$72.78</td><td class="num">85.60</td><td>VICTORY</td></tr>
+        <tr><td>Every stage, defeat</td><td class="num">0</td><td class="num">0</td><td class="num">$0.00</td><td class="num">N/A</td><td>DEFEAT</td></tr>
+      </tbody>
+    </table>
+    <p>Every supplied replay runs all 18 turns. The Stage 3 victory activates Happy Hour on turn 4,
+      puts a VIP order through at the promotional price, prepares a three-unit combo and uses the
+      Host in addition to the Waiter. The same Stage 3 victory, replayed through the web API,
+      reaches identical figures — the web boundary is exercised end to end, not just by hand.</p>
+  </section>
+
+  <section>
+    <h2>Still to submit</h2>
+    <p>The repository supplies the code, three runnable stage snapshots, test evidence and the
+      source documentation. The group still has to produce the final UML class and sequence
+      diagrams, the PDF report, the recorded group video, and the signed declarations.</p>
+    <table>
+      <thead><tr><th class="num">#</th><th>Video segment</th><th>Timestamp</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>The game launching from the submitted project</td><td></td></tr>
+        <tr><td class="num">2</td><td>Meaningful manager choices, including a constrained decision</td><td></td></tr>
+        <tr><td class="num">3</td><td>A dish going READY → SERVED → payment</td><td></td></tr>
+        <tr><td class="num">4</td><td>A VIP or Critic behaviour</td><td></td></tr>
+        <tr><td class="num">5</td><td>A Stage 3 feature</td><td></td></tr>
+        <tr><td class="num">6</td><td>One victory and one defeat</td><td></td></tr>
+        <tr><td class="num">7</td><td>The stage tag comparisons and the diagrams</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Notes for anyone running this on Windows</h2>
+    <div class="note">
+      <ul>
+        <li>The <code>.ps1</code> scripts are wrapped by <code>.bat</code> files that pass
+          <code>-ExecutionPolicy Bypass</code>, because PowerShell otherwise refuses to load an
+          unsigned script.</li>
+        <li>The scripts change into their own folder and pass only <strong>relative</strong> paths to
+          <code>javac</code>. Windows PowerShell 5.1 mangles non-ASCII characters in absolute paths,
+          which breaks the build when the project sits in a folder with a non-ASCII name.</li>
+        <li><code>start.ps1</code> is saved as UTF-8 <strong>with BOM</strong> on purpose:
+          PowerShell 5.1 reads a BOM-less UTF-8 script as ANSI and then mis-parses the Chinese
+          menu labels.</li>
+      </ul>
+    </div>
+  </section>
+
+</article>
+
+<!-- ============================ 中文 ============================ -->
+<article data-lang="zh" hidden>
+
+  <h1>Restaurant Rush</h1>
+  <p class="lede">用 Java 写的回合制餐厅经营游戏 · SC2002 面向对象设计与编程</p>
+
+  <div class="shots">
+    <figure>
+      <img src="ui-dashboard.png" alt="网页版界面，游戏进行中">
+      <figcaption>游戏面板（中局）</figcaption>
+    </figure>
+    <figure>
+      <img src="ui-start.png" alt="网页版界面，全新开局">
+      <figcaption>全新开局</figcaption>
+    </figure>
+  </div>
+
+  <section>
+    <h2>这是什么</h2>
+    <p>Restaurant Rush 是一个用 Java 写的回合制餐厅经营游戏。玩家扮演经理：员工的时间极其
+      有限，所以<strong>先服务谁</strong>就是整个游戏的博弈点。项目包含三个可独立运行的阶段
+      （各对应一个 git tag），以及一个可选的浏览器前端。</p>
+    <ul>
+      <li>Java 17 或更高版本。不需要 Maven、Gradle、任何外部库，也不需要联网。</li>
+      <li>两套界面共用同一份规则：<strong>命令行版</strong>（正式入口）和可选的<strong>网页版</strong>。</li>
+    </ul>
+    <h3>仓库地址</h3>
+    <ul>
+      <li>小组仓库：
+        <a href="https://github.com/DasbootU9607/SC2002-Object-Oriented-Design-and-Programming" target="_blank" rel="noopener">DasbootU9607/SC2002-Object-Oriented-Design-and-Programming</a></li>
+      <li>增加了网页版的分支仓库：
+        <a href="https://github.com/zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming" target="_blank" rel="noopener">zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming</a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>快速开始：一个启动器</h2>
+    <p>Windows —— 双击 <code>start.bat</code>，或在终端里执行：</p>
+    <pre><code>start.bat</code></pre>
+    <p>macOS / Linux：</p>
+    <pre><code>sh start.sh</code></pre>
+    <table>
+      <thead><tr><th class="num">序号</th><th>功能</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>网页版</td><td>启动本地服务并自动打开浏览器</td></tr>
+        <tr><td class="num">2</td><td>网页版布局预览</td><td>同上，但用脚本化的中局状态，方便截图</td></tr>
+        <tr><td class="num">3</td><td>命令行 Stage 3</td><td>完整版游戏</td></tr>
+        <tr><td class="num">4</td><td>命令行 Stage 2</td><td>含 VIP 与 Critic 顾客</td></tr>
+        <tr><td class="num">5</td><td>命令行 Stage 1</td><td>基础版游戏</td></tr>
+        <tr><td class="num">6</td><td>跑全部测试</td><td>三个阶段共 368 条断言</td></tr>
+      </tbody>
+    </table>
+    <p>每个入口也能直接指定，写脚本时很方便：</p>
+    <pre><code>start.bat web       :: 网页版，新开一局
+start.bat preview   :: 网页版，中局状态
+start.bat cli       :: 命令行 Stage 3
+start.bat cli2      :: Stage 2
+start.bat cli1      :: Stage 1
+start.bat test      :: 跑全部测试</code></pre>
+  </section>
+
+  <section>
+    <h2>网页版（前端）</h2>
+    <p>浏览器前端是一个额外的 boundary 对象，在 <code>stage-3</code> tag 之后追加。它
+      <strong>完全不包含游戏规则</strong>：页面只负责渲染 <code>GET /api/state</code>，并把每次
+      点击转发到 <code>POST /api/action</code>；引擎返回什么就显示什么——包括"为什么这一步不
+      合法"的原始原因。</p>
+    <pre><code>stage-3\web.bat              :: 等同 start.bat web
+stage-3\web.bat --preview    :: 等同 start.bat preview</code></pre>
+    <ul>
+      <li>地址是 <code>http://127.0.0.1:8765</code>（被占用则自动顺延到下一个空闲端口），并
+        自动打开浏览器。</li>
+      <li>用的是 JDK 自带的 <code>jdk.httpserver</code>，所以依然零依赖、完全离线，数据不出
+        本机。</li>
+      <li>面板包含等待队列、两张桌子、厨房、已离店顾客；每一步操作都有对应按钮：落座 / 下单
+        / 上菜 / 做菜 / 等待。</li>
+      <li>右上角可切换中文 / English，选择会被记住。</li>
+      <li><code>--no-browser</code> 只起服务不开浏览器。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>命令行版（正式入口）</h2>
+    <pre><code>stage-3\run.bat
+stage-3\run.bat --replay examples\victory.txt
+stage-3\run.bat --replay examples\defeat.txt</code></pre>
+    <p>把 <code>stage-3</code> 换成 <code>stage-1</code> 或 <code>stage-2</code> 即可运行早期
+      阶段。每个阶段目录都是自包含的——<code>src</code>、<code>test</code>、
+      <code>examples</code>、各自的脚本和 README——可以单独编译单独跑。</p>
+    <p>macOS / Linux：<code>sh stage-3/run.sh</code>、
+      <code>sh stage-3/run.sh --replay examples/victory.txt</code>。</p>
+    <p>不借助任何脚本，直接编译运行：</p>
+    <pre><code>mkdir -p build/classes
+javac -encoding UTF-8 --release 17 -d build/classes src/restaurantrush/*.java
+java -cp build/classes restaurantrush.Main</code></pre>
+  </section>
+
+  <section>
+    <h2>测试</h2>
+    <pre><code>verify.bat          :: 等同 start.bat test</code></pre>
+    <p>依次运行三套不依赖任何框架的测试：99 + 110 + 159 = <strong>368 条断言</strong>，全部
+      通过时退出码为 0。覆盖内容包括：作业原文的 Pasta 时间线、员工任务上限、非法输入重试、
+      队列与桌子规则、顾客放弃与订单取消、付款顺序、价格与满意度快照、两种结局、顾客多态行为、
+      Host 的独立任务、Combo 舍入、以及 Happy Hour 的持续回合与锁价。</p>
+  </section>
+
+  <section>
+    <h2>目录结构</h2>
+    <pre><code>.
+├─ start.bat / start.ps1 / start.sh     一键启动器
+├─ verify.bat / verify.ps1 / verify.sh  三套测试
+├─ docs/                                本页与截图
+├─ stage-1/  stage-2/  stage-3/         每个阶段一份自包含快照
+│    ├─ src/restaurantrush/             Java 源码
+│    ├─ test/restaurantrush/            免框架测试
+│    ├─ examples/                       胜利与失败的回放脚本
+│    └─ 运行 / 测试脚本、README
+└─ stage-3/
+     ├─ src/restaurantrush/ui/          网页 boundary（服务、会话、JSON 写出）
+     └─ web/                            index.html、style.css、app.js</code></pre>
+  </section>
+
+  <section>
+    <h2>基础设定</h2>
+    <table>
+      <thead><tr><th>项目</th><th>数值</th></tr></thead>
+      <tbody>
+        <tr><td>回合</td><td>18 回合（每局必定跑满）</td></tr>
+        <tr><td>桌子</td><td>2 张</td></tr>
+        <tr><td>员工</td><td>服务生 ×1（每回合 1 个任务）、厨师 ×1（每回合 1 个准备单位）、收银员 ×1（每回合收 1 笔钱）</td></tr>
+        <tr><td>到店</td><td>第 1、4、7、10、13、16 回合各来一位顾客</td></tr>
+        <tr><td>胜利条件</td><td>付款人数 ≥ 4 <strong>且</strong> 营收 ≥ $45.00 <strong>且</strong> 已付款顾客平均满意度 ≥ 60</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>菜品</th><th class="num">价格</th><th class="num">准备单位</th></tr></thead>
+      <tbody>
+        <tr><td>Salad（沙拉）</td><td class="num">$9.00</td><td class="num">1</td></tr>
+        <tr><td>Burger（汉堡）</td><td class="num">$15.00</td><td class="num">1</td></tr>
+        <tr><td>Pasta（意面）</td><td class="num">$18.00</td><td class="num">2</td></tr>
+        <tr><td>Combo（沙拉 + 意面）</td><td class="num">$24.30</td><td class="num">3</td></tr>
+      </tbody>
+    </table>
+    <p>顾客按文档化的确定性规则自己点单。金额一律以整数分存储，并在下单瞬间锁价。平均满意度
+      用的是每位顾客<strong>付款那一刻</strong>记录的满意度。</p>
+  </section>
+
+  <section>
+    <h2>三个阶段</h2>
+    <table>
+      <thead><tr><th>目录</th><th>Git tag</th><th>新增内容</th><th class="num">断言数</th></tr></thead>
+      <tbody>
+        <tr><td><code>stage-1/</code></td><td><code>stage-1</code></td><td>只有 Regular 顾客的基础游戏</td><td class="num">99</td></tr>
+        <tr><td><code>stage-2/</code></td><td><code>stage-2</code></td><td>VIP 与 Critic 顾客</td><td class="num">110</td></tr>
+        <tr><td><code>stage-3/</code></td><td><code>stage-3</code></td><td>Host、ComboMeal、Happy Hour</td><td class="num">159</td></tr>
+      </tbody>
+    </table>
+    <p>阶段目录之间重复的源码是刻意为之：每个阶段都是一份独立、自包含的快照。三个 tag 都是
+      annotated tag，落在依次递进的提交上，所以 <code>git switch --detach stage-1</code> 看到的
+      就是纯 Stage 1。</p>
+  </section>
+
+  <section>
+    <h2>Stage 1 → Stage 2</h2>
+    <p>新增源码：<code>VIPCustomer.java</code>、<code>CriticCustomer.java</code>。</p>
+    <p>修改源码：<code>GameSetup.java</code> 注册混合到来顺序并更新阶段横幅；
+      <code>GameTests.java</code> 增加多态检查并更新回放期望值。没有删除任何文件——
+      <code>GameEngine</code>、各员工类、<code>ConsoleUI</code> 和既有的模型类都没有改动，
+      这正是重点：新增顾客行为不需要碰回合时序。</p>
+  </section>
+
+  <section>
+    <h2>Stage 2 → Stage 3</h2>
+    <p>新增源码：<code>Host.java</code>、<code>ComboMeal.java</code>、<code>HappyHourPolicy.java</code>。</p>
+    <table>
+      <thead><tr><th>修改的源码</th><th>原因</th></tr></thead>
+      <tbody>
+        <tr><td><code>GameSetup.java</code></td><td>注册 Combo，并更新阶段横幅</td></tr>
+        <tr><td><code>Menu.java</code></td><td>保存 Combo 选项并实现文档化的选择规则</td></tr>
+        <tr><td><code>Customer.java</code></td><td>把满意度恢复封装起来，且不会让已离店顾客复活</td></tr>
+        <tr><td><code>GameState.java</code></td><td>把报价委托给当前生效的定价策略</td></tr>
+        <tr><td><code>GameEngine.java</code></td><td>在原有时序外补充 Host 阶段与策略钩子</td></tr>
+        <tr><td><code>ConsoleUI.java</code></td><td>收集新决策并显示欢乐时光剩余回合</td></tr>
+      </tbody>
+    </table>
+    <p>未删除任何文件。订单生命周期、备餐、上菜、付款、释放桌子、顾客子类、整数金额与结果判定
+      规则均未改动。</p>
+    <p>因为每个阶段是自包含目录，GitHub 会把这两次演进显示成"新增快照"。想只看源码差异，
+      可在本地执行：</p>
+    <pre><code>git diff --no-index stage-1/src stage-2/src
+git diff --no-index stage-2/src stage-3/src</code></pre>
+    <p>（退出码为 1 只表示"发现差异"，不是构建失败。）</p>
+  </section>
+
+  <section>
+    <h2>网页版作为设计证据</h2>
+    <p>网页前端在 <code>stage-3</code> 之后追加，是在同一套 control 与 domain 类之上的
+      <strong>第二个 boundary 实现</strong>。加入它<strong>没有改动任何规则类</strong>；唯一动到
+      既有代码的地方，是把 <code>GameResult</code> 里的三个胜利目标抽取成具名常量，好让规则和
+      界面从同一处读取同样的数字。这是"规则不进入 UI"的一个具体、可检查的例子。</p>
+  </section>
+
+  <section>
+    <h2>可复现的运行结果</h2>
+    <table>
+      <thead><tr><th>回放</th><th class="num">付款</th><th class="num">已上菜</th><th class="num">营收</th><th class="num">平均满意度</th><th>结果</th></tr></thead>
+      <tbody>
+        <tr><td>Stage 1 胜利</td><td class="num">5</td><td class="num">5</td><td class="num">$66.00</td><td class="num">79.20</td><td>VICTORY</td></tr>
+        <tr><td>Stage 2 胜利</td><td class="num">5</td><td class="num">5</td><td class="num">$65.10</td><td class="num">78.00</td><td>VICTORY</td></tr>
+        <tr><td>Stage 3 胜利</td><td class="num">5</td><td class="num">6</td><td class="num">$72.78</td><td class="num">85.60</td><td>VICTORY</td></tr>
+        <tr><td>每个阶段的失败局</td><td class="num">0</td><td class="num">0</td><td class="num">$0.00</td><td class="num">N/A</td><td>DEFEAT</td></tr>
+      </tbody>
+    </table>
+    <p>所有提供的回放都会跑满 18 回合。Stage 3 的胜利局在第 4 回合开启欢乐时光、让一张 VIP
+      订单按促销价成交、完成一份三单位的 Combo，并且同时使用了 Host 和服务生。同一场 Stage 3
+      胜利通过网页 API 重新跑一遍，得到的数字完全一致——说明网页 boundary 是被真正端到端验证
+      过的。</p>
+  </section>
+
+  <section>
+    <h2>还需提交的材料</h2>
+    <p>仓库提供代码、三份可运行的阶段快照、测试证据和源码文档。小组还需要完成：最终的 UML
+      类图与序列图、PDF 报告、录制的讲解视频，以及签名的原创声明与 GAI 使用声明。</p>
+    <table>
+      <thead><tr><th class="num">#</th><th>视频分段</th><th>时间戳</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>从提交的项目启动游戏</td><td></td></tr>
+        <tr><td class="num">2</td><td>有意义的经理选择，含一次受资源限制的决策</td><td></td></tr>
+        <tr><td class="num">3</td><td>一道菜从 READY → SERVED → 付款</td><td></td></tr>
+        <tr><td class="num">4</td><td>VIP 或 Critic 的行为</td><td></td></tr>
+        <tr><td class="num">5</td><td>一个 Stage 3 特性</td><td></td></tr>
+        <tr><td class="num">6</td><td>一次胜利与一次失败</td><td></td></tr>
+        <tr><td class="num">7</td><td>三个阶段 tag 的对比与图</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>在 Windows 上运行时的三点说明</h2>
+    <div class="note">
+      <ul>
+        <li>所有 <code>.ps1</code> 都配了 <code>.bat</code> 包装，并传入
+          <code>-ExecutionPolicy Bypass</code>——否则 PowerShell 会以"脚本未签名"为由拒绝加载。</li>
+        <li>脚本都会先切换到自身目录，并且只把<strong>相对路径</strong>传给 <code>javac</code>。
+          Windows PowerShell 5.1 会把绝对路径里的非 ASCII 字符转坏，当项目位于中文目录下时
+          构建会失败。</li>
+        <li><code>start.ps1</code> 刻意存成<strong>带 BOM 的 UTF-8</strong>：PowerShell 5.1 会把
+          不带 BOM 的 UTF-8 当作 ANSI 读取，从而解析不了中文菜单标签。</li>
+      </ul>
+    </div>
+  </section>
+
+</article>
+
+</main>
+
+<footer class="wrap">
+  <p>Restaurant Rush · SC2002 Object-Oriented Design &amp; Programming · <a href="https://github.com/zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming" target="_blank" rel="noopener">source on GitHub</a></p>
+</footer>
+
+<script>
+(function () {
+  var KEY = 'rr-doc-lang';
+
+  function store(lang) {
+    try { localStorage.setItem(KEY, lang); } catch (error) { /* file:// or private mode */ }
+  }
+  function recall() {
+    try { return localStorage.getItem(KEY); } catch (error) { return null; }
+  }
+
+  function apply(lang) {
+    var articles = document.querySelectorAll('[data-lang]');
+    for (var i = 0; i < articles.length; i++) {
+      articles[i].hidden = articles[i].getAttribute('data-lang') !== lang;
+    }
+    var buttons = document.querySelectorAll('[data-lang-btn]');
+    for (var j = 0; j < buttons.length; j++) {
+      var isActive = buttons[j].getAttribute('data-lang-btn') === lang;
+      buttons[j].classList.toggle('active', isActive);
+      buttons[j].setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : 'en';
+    document.title = lang === 'zh'
+      ? 'Restaurant Rush — 项目文档'
+      : 'Restaurant Rush — Project documentation';
+  }
+
+  var buttons = document.querySelectorAll('[data-lang-btn]');
+  for (var k = 0; k < buttons.length; k++) {
+    buttons[k].addEventListener('click', function () {
+      var lang = this.getAttribute('data-lang-btn');
+      store(lang);
+      apply(lang);
+    });
+  }
+
+  var fromQuery = null;
+  try { fromQuery = new URLSearchParams(window.location.search).get('lang'); } catch (error) { /* ignore */ }
+  var start = (fromQuery === 'en' || fromQuery === 'zh') ? fromQuery : (recall() || 'en');
+  apply(start);
+})();
+</script>
+
+</body>
+</html>

@@ -29,6 +29,7 @@ It comes in three runnable stages, each a git tag, plus an optional browser fron
 
 - Group repository: <https://github.com/DasbootU9607/SC2002-Object-Oriented-Design-and-Programming>
 - Fork that adds the optional web UI: <https://github.com/zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming>
+- Documentation site with a one-click language switch: <https://zhangxiaozhuang398-max.github.io/SC2002-Object-Oriented-Design-and-Programming/>
 
 ### Quick start: one launcher
 
@@ -279,6 +280,7 @@ Restaurant Rush 是一个用 Java 写的回合制餐厅经营游戏（SC2002 小
 
 - 小组仓库：<https://github.com/DasbootU9607/SC2002-Object-Oriented-Design-and-Programming>
 - 增加了网页版的分支仓库：<https://github.com/zhangxiaozhuang398-max/SC2002-Object-Oriented-Design-and-Programming>
+- 可一键切换语言的文档站：<https://zhangxiaozhuang398-max.github.io/SC2002-Object-Oriented-Design-and-Programming/>
 
 ### 快速开始：一个启动器
 
