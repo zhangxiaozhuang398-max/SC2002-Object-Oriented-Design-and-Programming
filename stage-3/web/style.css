@@ -70,6 +70,7 @@ body {
   box-shadow: var(--shadow);
 }
 .phase-banner.done { background: var(--mint); }
+.phase-banner.lost { background: var(--coral); }
 .phase-banner:not(:empty) { display: block; }
 
 /* ---------- board layout ---------- */
@@ -125,6 +126,9 @@ body {
 .sat-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .sat-bar { flex: 1; height: 8px; background: #F0E6DA; border-radius: 999px; overflow: hidden; }
 .sat-fill { height: 100%; border-radius: 999px; background: var(--mint-deep); transition: width .5s ease; }
+.sat-fill.good { background: var(--mint-deep); }
+.sat-fill.mid { background: #E8C36A; }
+.sat-fill.low { background: #E58C8C; }
 .sat-num { font-size: 12px; font-weight: 700; min-width: 26px; text-align: right; }
 
 /* ---------- tables ---------- */
@@ -175,7 +179,8 @@ body {
   box-shadow: var(--shadow);
   padding: 14px 18px;
 }
-.action-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+.action-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; transition: opacity .3s ease; }
+.action-row.assigned { opacity: .5; }
 .action-label { font-weight: 700; min-width: 96px; font-size: 14px; }
 .pill-btn {
   border: 2px solid var(--mint);
@@ -206,7 +211,30 @@ body {
 }
 .end-turn:hover:not(:disabled) { background: var(--mint-deep); color: #fff; transform: translateY(-1px); }
 .end-turn:disabled { opacity: .45; cursor: not-allowed; }
+.end-turn.ready { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
 .hint { margin-top: 10px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+/* ---------- start panel (between turns) ---------- */
+
+.start-panel {
+  background: linear-gradient(135deg, var(--butter), var(--peach));
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.start-title { font-weight: 800; font-size: 16px; }
+.start-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.pill-btn.big { padding: 10px 22px; font-size: 15px; }
+.events { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+.event-row { font-size: 13px; color: var(--ink); background: rgba(255,255,255,.55); border-radius: 10px; padding: 5px 10px; }
 
 /* ---------- responsive ---------- */
 

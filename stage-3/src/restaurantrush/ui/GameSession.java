@@ -6,6 +6,7 @@ import java.util.Locale;
 
 import restaurantrush.Customer;
 import restaurantrush.GameEngine;
+import restaurantrush.GameResult;
 import restaurantrush.GameSetup;
 import restaurantrush.GameState;
 import restaurantrush.Order;
@@ -28,7 +29,7 @@ import restaurantrush.WaiterTask;
  */
 public final class GameSession {
 
-    private final GameEngine engine = new GameEngine(new GameSetup());
+    private GameEngine engine;
 
     private boolean turnOpen;
     private boolean hostAssigned;
@@ -36,6 +37,20 @@ public final class GameSession {
     private boolean chefAssigned;
     private String lastMessage = "";
     private List<String> lastEvents = List.of();
+
+    public GameSession() {
+        newGame();
+    }
+
+    private void newGame() {
+        engine = new GameEngine(new GameSetup());
+        turnOpen = false;
+        hostAssigned = false;
+        waiterAssigned = false;
+        chefAssigned = false;
+        lastMessage = "";
+        lastEvents = List.of();
+    }
 
     // ------------------------------------------------------------------
     // Commands
@@ -110,6 +125,11 @@ public final class GameSession {
                 lastMessage = "Turn " + engine.getTurn() + " finished.";
                 return lastMessage;
             }
+            case "reset" -> {
+                newGame();
+                lastMessage = "New game started.";
+                return lastMessage;
+            }
             default -> throw new IllegalArgumentException("Unknown action type: " + type);
         }
     }
@@ -142,6 +162,11 @@ public final class GameSession {
                 .value("happyHour", new Json.Obj()
                         .bool("used", engine.hasUsedHappyHour())
                         .num("remaining", engine.getHappyHourRemaining())
+                        .toString())
+                .value("targets", new Json.Obj()
+                        .num("paid", GameResult.PAID_TARGET)
+                        .num("revenueCents", GameResult.REVENUE_TARGET_CENTS)
+                        .num("satisfaction", GameResult.SATISFACTION_TARGET)
                         .toString())
                 .value("assignments", new Json.Obj()
                         .bool("host", hostAssigned)

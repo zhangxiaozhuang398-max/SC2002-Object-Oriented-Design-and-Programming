@@ -21,6 +21,9 @@ The `.bat` files wrap the `.ps1` scripts and pass `-ExecutionPolicy Bypass`, bec
 PowerShell otherwise refuses to load an unsigned script ("not digitally signed").
 `.ps1` equivalents: `.\stage-3\run.ps1` and `.\verify.ps1`.
 
+`stage-3\web.bat` starts the optional browser front-end for Stage 3 - a second
+boundary object that contains no game rules. See `stage-3/README.md`.
+
 macOS/Linux:
 
 ```sh

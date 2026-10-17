@@ -1,11 +1,13 @@
 "use strict";
 
 /*
- * P1 scope: state rendering + bilingual skeleton.
+ * P2 scope: fully playable web UI.
  *
  * This file contains NO game rules. It draws whatever GET /api/state returns,
- * and every decision will be sent back to the server as an action request (P2).
- * Nothing here decides whether a move is legal.
+ * sends every decision back as an action request, and shows the message the
+ * engine replies with. Whether a move is legal is decided in Java only; the
+ * buttons below are generated from the lists the server provides (who is in
+ * the queue, who is seated, which orders are in the kitchen).
  */
 
 const CUSTOMER_STATUS = {
@@ -47,15 +49,23 @@ const I18N = {
     emptyHistory: '还没有顾客离店',
     emptyTable: '空桌',
     table: '{n} 号桌',
-    phaseNotStarted: '游戏还没开始',
-    phaseBetweenTurns: '第 {n} 天已结束',
+    phaseNotStarted: '欢迎光临！从第 1 天开始营业吧～',
+    phaseBetweenTurns: '第 {n} 天打烊啦',
     phaseFinished: '游戏结束',
     endTurn: '结束本回合',
-    p1Hint: 'P1 预览：下面这些按钮会在下一步（P2）接入真实操作。',
-    happyHourAction: '欢乐时光',
+    startDay: '▶️ 开始第 {n} 天',
+    activateHappyHour: '☀️ 开启欢乐时光',
+    activateHappyHourUsed: '☀️ 欢乐时光已用掉啦',
+    resetGame: '🔄 再来一局',
     host: '迎宾',
     waiter: '服务员',
-    chef: '厨师'
+    chef: '厨师',
+    seat: '🪑 落座',
+    order: '📝 下单',
+    serve: '🍽️ 上菜',
+    cook: '🍳 做',
+    wait: '💤 等待',
+    hint: '点一个按钮就是做一次决定；不合法的操作会被拦下并告诉你原因。三个岗位都决定好之后，结束本回合。'
   },
   en: {
     appTitle: 'Restaurant Rush',
@@ -76,15 +86,23 @@ const I18N = {
     emptyHistory: 'No one has left yet',
     emptyTable: 'Free',
     table: 'Table {n}',
-    phaseNotStarted: 'The game has not started yet',
-    phaseBetweenTurns: 'Day {n} has ended',
+    phaseNotStarted: 'Welcome! Open up for day 1~',
+    phaseBetweenTurns: 'Day {n} is over',
     phaseFinished: 'Game over',
     endTurn: 'End turn',
-    p1Hint: 'P1 preview: these buttons will be wired to real actions in P2.',
-    happyHourAction: 'Happy Hour',
+    startDay: '▶️ Start day {n}',
+    activateHappyHour: '☀️ Activate Happy Hour',
+    activateHappyHourUsed: '☀️ Happy Hour used up',
+    resetGame: '🔄 Play again',
     host: 'Host',
     waiter: 'Waiter',
-    chef: 'Chef'
+    chef: 'Chef',
+    seat: '🪑 Seat',
+    order: '📝 Order',
+    serve: '🍽️ Serve',
+    cook: '🍳 Cook',
+    wait: '💤 Wait',
+    hint: 'Each click is one decision; illegal moves are rejected with the reason. End the turn once all three staff have decided.'
   }
 };
 
@@ -131,10 +149,30 @@ async function load() {
     state = await response.json();
     render();
   } catch (error) {
-    const toast = document.getElementById('toast');
-    toast.textContent = 'Cannot reach the game server: ' + error;
-    toast.classList.add('error');
+    showToast('Cannot reach the game server: ' + error, true);
   }
+}
+
+async function act(params) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    query.set(key, String(value));
+  }
+  try {
+    const response = await fetch('/api/action?' + query.toString(), { method: 'POST' });
+    const payload = await response.json();
+    state = payload.state;
+    render();
+    showToast(payload.message, !payload.ok);
+  } catch (error) {
+    showToast('Cannot reach the game server: ' + error, true);
+  }
+}
+
+function showToast(text, isError) {
+  const toast = document.getElementById('toast');
+  toast.textContent = text || '';
+  toast.classList.toggle('error', !!isError);
 }
 
 function render() {
@@ -145,34 +183,47 @@ function render() {
   renderTables();
   renderKitchen();
   renderHistory();
-  renderPreviewActions();
-  renderToast();
+  renderActions();
 }
 
+// ------------------------------------------------------------------
+// Panels
+// ------------------------------------------------------------------
+
 function renderTop() {
+  const targets = state.targets || {};
   document.getElementById('chipTurn').textContent = tr('turn', { n: state.turn, m: state.maxTurns });
-  document.getElementById('chipRevenue').textContent = tr('revenue', { v: money(state.revenueCents) });
-  document.getElementById('chipPaid').textContent = tr('paid', { n: state.paidCount });
-  document.getElementById('chipSat').textContent = tr('satisfaction', { v: state.averageSatisfaction });
+  document.getElementById('chipRevenue').textContent = tr('revenue', {
+    v: money(state.revenueCents) + targetSuffix(money(targets.revenueCents))
+  });
+  document.getElementById('chipPaid').textContent = tr('paid', {
+    n: state.paidCount + targetSuffix(targets.paid)
+  });
+  document.getElementById('chipSat').textContent = tr('satisfaction', {
+    v: state.averageSatisfaction + targetSuffix(targets.satisfaction)
+  });
   const hh = state.happyHour;
   const hhText = hh.remaining > 0 ? tr('happyHourRemaining', { n: hh.remaining }) : tr('happyHourOff');
   document.getElementById('chipHappyHour').textContent = tr('happyHour') + '：' + hhText;
 }
 
+function targetSuffix(value) {
+  return value == null || value === '' ? '' : ' / ' + value;
+}
+
 function renderPhaseBanner() {
   const banner = document.getElementById('phaseBanner');
+  banner.classList.remove('done', 'lost');
   if (state.phase === 'FINISHED') {
-    banner.textContent = state.result || tr('phaseFinished');
-    banner.classList.add('done');
+    const won = typeof state.result === 'string' && state.result.indexOf('VICTORY') === 0;
+    banner.textContent = (won ? '🎉 ' : '😢 ') + (state.result || tr('phaseFinished'));
+    banner.classList.add(won ? 'done' : 'lost');
   } else if (state.phase === 'NOT_STARTED') {
     banner.textContent = tr('phaseNotStarted');
-    banner.classList.remove('done');
   } else if (state.phase === 'BETWEEN_TURNS') {
     banner.textContent = tr('phaseBetweenTurns', { n: state.turn });
-    banner.classList.remove('done');
   } else {
     banner.textContent = '';
-    banner.classList.remove('done');
   }
 }
 
@@ -180,13 +231,14 @@ function customerCard(customer) {
   const wrap = document.createElement('div');
   wrap.className = 'customer-card';
   const avatar = AVATARS[customer.type] || AVATARS.Regular;
+  const level = customer.satisfaction >= 60 ? 'good' : (customer.satisfaction >= 30 ? 'mid' : 'low');
   wrap.innerHTML =
     '<div class="avatar ' + avatar.cls + '">' + avatar.emoji + '</div>' +
     '<div class="customer-info">' +
       '<div class="customer-name">C' + customer.id + ' · ' + customer.type + '</div>' +
       '<div class="customer-status">' + statusText(CUSTOMER_STATUS, customer.status) + '</div>' +
       '<div class="sat-row">' +
-        '<div class="sat-bar"><div class="sat-fill" style="width:' + customer.satisfaction + '%"></div></div>' +
+        '<div class="sat-bar"><div class="sat-fill ' + level + '" style="width:' + customer.satisfaction + '%"></div></div>' +
         '<span class="sat-num">' + customer.satisfaction + '</span>' +
       '</div>' +
     '</div>';
@@ -254,40 +306,125 @@ function renderHistory() {
   for (const customer of state.history) box.appendChild(customerCard(customer));
 }
 
-/* P1 preview only: static, disabled buttons that show the intended layout.
-   They are replaced by real, state-driven buttons in P2. */
-function renderPreviewActions() {
-  const rows = document.getElementById('actionRows');
-  rows.innerHTML = '';
-  const groups = [
-    { label: tr('happyHourAction'), buttons: ['activate', 'continue'] },
-    { label: tr('host'), buttons: ['seat', 'wait'] },
-    { label: tr('waiter'), buttons: ['seat', 'order', 'serve', 'wait'] },
-    { label: tr('chef'), buttons: ['cook', 'wait'] }
-  ];
-  for (const group of groups) {
-    const row = document.createElement('div');
-    row.className = 'action-row';
-    row.innerHTML = '<span class="action-label">' + group.label + '</span>';
-    for (const label of group.buttons) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'pill-btn';
-      button.disabled = true;
-      button.textContent = label;
-      row.appendChild(button);
-    }
-    rows.appendChild(row);
-  }
+// ------------------------------------------------------------------
+// Action bar
+// ------------------------------------------------------------------
+
+function pill(label, onClick, disabled) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'pill-btn';
+  button.textContent = label;
+  button.disabled = !!disabled;
+  button.addEventListener('click', onClick);
+  return button;
 }
 
-function renderToast() {
-  const toast = document.getElementById('toast');
-  if (state && state.message) {
-    toast.textContent = state.message;
-    toast.classList.remove('error');
-  }
+function actionRow(label, buttons, assigned) {
+  const row = document.createElement('div');
+  row.className = 'action-row' + (assigned ? ' assigned' : '');
+  const caption = document.createElement('span');
+  caption.className = 'action-label';
+  caption.textContent = (assigned ? '✓ ' : '') + label;
+  row.appendChild(caption);
+  for (const button of buttons) row.appendChild(button);
+  return row;
 }
+
+function renderActions() {
+  const startPanel = document.getElementById('startPanel');
+  const actionRows = document.getElementById('actionRows');
+  const endTurn = document.getElementById('endTurnBtn');
+  actionRows.innerHTML = '';
+  endTurn.style.display = 'none';
+
+  if (state.phase === 'FINISHED') {
+    startPanel.hidden = false;
+    startPanel.innerHTML = '';
+    startPanel.appendChild(pill(tr('resetGame'), () => act({ type: 'reset' })));
+    return;
+  }
+
+  if (state.phase === 'NOT_STARTED' || state.phase === 'BETWEEN_TURNS') {
+    startPanel.hidden = false;
+    renderStartPanel(startPanel);
+    return;
+  }
+
+  startPanel.hidden = true;
+  endTurn.style.display = '';
+  const assigned = state.assignments;
+  endTurn.disabled = !(assigned.host && assigned.waiter && assigned.chef);
+  endTurn.classList.toggle('ready', !endTurn.disabled);
+
+  actionRows.appendChild(actionRow(tr('host'), hostButtons(), assigned.host));
+  actionRows.appendChild(actionRow(tr('waiter'), waiterButtons(), assigned.waiter));
+  actionRows.appendChild(actionRow(tr('chef'), chefButtons(), assigned.chef));
+}
+
+function renderStartPanel(panel) {
+  const title = document.createElement('div');
+  title.className = 'start-title';
+  title.textContent = tr('startDay', { n: state.turn + 1 });
+  panel.appendChild(title);
+
+  if (state.phase === 'BETWEEN_TURNS' && state.events && state.events.length > 0) {
+    const box = document.createElement('div');
+    box.className = 'events';
+    for (const event of state.events) {
+      const row = document.createElement('div');
+      row.className = 'event-row';
+      row.textContent = '· ' + event;
+      box.appendChild(row);
+    }
+    panel.appendChild(box);
+  }
+
+  const buttons = document.createElement('div');
+  buttons.className = 'start-buttons';
+  buttons.appendChild(pill(state.happyHour.used ? tr('activateHappyHourUsed') : tr('activateHappyHour'),
+    () => act({ type: 'start', on: true }), state.happyHour.used));
+  buttons.appendChild(pill(tr('startDay', { n: state.turn + 1 }), () => act({ type: 'start', on: false })));
+  panel.appendChild(buttons);
+}
+
+function hostButtons() {
+  const buttons = state.waiting.map((customer) =>
+    pill(tr('seat') + ' C' + customer.id, () => act({ type: 'host', task: 'seat', id: customer.id })));
+  buttons.push(pill(tr('wait'), () => act({ type: 'host', task: 'wait' })));
+  return buttons;
+}
+
+function waiterButtons() {
+  const buttons = [];
+  for (const customer of state.waiting) {
+    buttons.push(pill(tr('seat') + ' C' + customer.id,
+      () => act({ type: 'waiter', task: 'seat', id: customer.id })));
+  }
+  for (const table of state.tables) {
+    if (!table.customer) continue;
+    const customer = table.customer;
+    buttons.push(pill(tr('order') + ' C' + customer.id,
+      () => act({ type: 'waiter', task: 'order', id: customer.id })));
+    buttons.push(pill(tr('serve') + ' C' + customer.id,
+      () => act({ type: 'waiter', task: 'serve', id: customer.id })));
+  }
+  buttons.push(pill(tr('wait'), () => act({ type: 'waiter', task: 'wait' })));
+  return buttons;
+}
+
+function chefButtons() {
+  const buttons = state.kitchen.map((order) =>
+    pill(tr('cook') + ' #' + order.id, () => act({ type: 'chef', task: 'cook', id: order.id })));
+  buttons.push(pill(tr('wait'), () => act({ type: 'chef', task: 'wait' })));
+  return buttons;
+}
+
+// ------------------------------------------------------------------
+// Boot
+// ------------------------------------------------------------------
+
+document.getElementById('endTurnBtn').addEventListener('click', () => act({ type: 'finish' }));
 
 document.querySelectorAll('.lang-btn').forEach((btn) => {
   btn.addEventListener('click', () => {

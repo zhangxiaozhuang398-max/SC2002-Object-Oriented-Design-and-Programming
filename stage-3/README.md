@@ -16,6 +16,26 @@ policy, which otherwise refuses to load an unsigned script ("not digitally signe
 macOS/Linux: `sh run.sh`, `sh run.sh --replay examples/victory.txt`, `sh test.sh`.
 Script paths are resolved relative to this stage, so invoking a script from the repository root also works.
 
+## Optional web UI
+
+An optional browser front-end exists as a second boundary object. It was added
+after the stage-3 tag as an extra and changes no game rule: the page only draws
+`GET /api/state` and forwards each click to `POST /api/action`, and the engine's
+rejections are shown verbatim, so all rules still live in Java.
+
+```bat
+web.bat            start the web UI (fresh game) and open the browser
+web.bat --preview  scripted mid-game state, for reviewing the layout
+```
+
+- Served from `http://127.0.0.1:8765` (the next free port if that one is busy);
+  entirely offline, using the JDK's built-in `jdk.httpserver` - no libraries.
+- Chinese / English toggle, state panels for the queue, tables and kitchen, and
+  buttons for the four decisions of a turn.
+- `--no-browser` skips opening the browser (for headless checks).
+
+The command-line interface remains the primary entry point and is unchanged.
+
 ## Commands and turn order
 
 Each turn asks for four decisions:
