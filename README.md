@@ -5,18 +5,15 @@ A turn-based restaurant management game in Java · SC2002 Object-Oriented Design
 </p>
 
 <p align="center">
-<a href="#en"><b>English</b></a> · <a href="#zh"><b>中文</b></a>
+One README, two languages: open <b>中文</b> below to switch · 点击下方「中文」标题即可切换语言
 </p>
 
 | Dashboard, mid-game / 游戏面板（中局） | A new game / 全新开局 |
 | :---: | :---: |
 | ![Dashboard](docs/ui-dashboard.png) | ![New game](docs/ui-start.png) |
 
----
-
-<a id="en"></a>
-
-## 🇬🇧 English
+<details name="lang" open>
+<summary><b>🇬🇧 English</b></summary>
 
 ### What this is
 
@@ -264,11 +261,10 @@ Video segments (fill in the timestamps once recorded):
 - `start.ps1` is saved as UTF-8 **with BOM** on purpose: PowerShell 5.1 reads a BOM-less
   UTF-8 script as ANSI and then mis-parses the Chinese menu labels.
 
----
+</details>
 
-<a id="zh"></a>
-
-## 🇨🇳 中文
+<details name="lang">
+<summary><b>🇨🇳 中文</b></summary>
 
 ### 这是什么
 
@@ -499,3 +495,5 @@ git diff --no-index stage-2/src stage-3/src
   绝对路径里的非 ASCII 字符转坏，当项目位于中文目录下时构建会失败。
 - `start.ps1` 刻意存成 **带 BOM 的 UTF-8**：PowerShell 5.1 会把不带 BOM 的 UTF-8 当作 ANSI
   读取，从而解析不了中文菜单标签。
+
+</details>
