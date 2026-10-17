@@ -63,9 +63,10 @@ public final class GameSession {
      * @param task the sub-command, e.g. {@code seat}, {@code order}, {@code serve}, {@code wait}
      * @param id   a customer id or order id; ignored for {@code wait}
      * @param on   only for {@code start}: activate Happy Hour
+     * @param lang the language to render messages in, {@code zh} or {@code en}
      * @return a JSON object {@code {ok, message, events, state}}
      */
-    public synchronized String actionResponse(String type, String task, int id, boolean on) {
+    public synchronized String actionResponse(String type, String task, int id, boolean on, String lang) {
         boolean ok = true;
         String message;
         try {
@@ -74,12 +75,19 @@ public final class GameSession {
             ok = false;
             message = refused.getMessage() == null ? "Illegal action." : refused.getMessage();
         }
+        String shown = Messages.localise(message, lang);
         return new Json.Obj()
                 .bool("ok", ok)
-                .str("message", message)
-                .value("events", Json.array(lastEvents.stream().map(Json::string).toList()))
-                .value("state", stateJson(message))
+                .str("message", shown)
+                .value("events", eventsJson(lang))
+                .value("state", stateJson(message, lang))
                 .toString();
+    }
+
+    private String eventsJson(String lang) {
+        return Json.array(lastEvents.stream()
+                .map(event -> Json.string(Messages.localise(event, lang)))
+                .toList());
     }
 
     private String dispatch(String type, String task, int id, boolean on) {
@@ -142,11 +150,11 @@ public final class GameSession {
     // State rendering
     // ------------------------------------------------------------------
 
-    public synchronized String stateJson() {
-        return stateJson(null);
+    public synchronized String stateJson(String lang) {
+        return stateJson(null, lang);
     }
 
-    private String stateJson(String message) {
+    private String stateJson(String message, String lang) {
         GameState state = engine.getState();
 
         Json.Obj root = new Json.Obj()
@@ -178,8 +186,8 @@ public final class GameSession {
                 .value("orders", Json.array(orders(state.getOrders())))
                 .value("kitchen", Json.array(activeOrders(state.getOrders())))
                 .value("history", Json.array(history(state)))
-                .str("message", message == null ? lastMessage : message)
-                .value("events", Json.array(lastEvents.stream().map(Json::string).toList()));
+                .str("message", Messages.localise(message == null ? lastMessage : message, lang))
+                .value("events", eventsJson(lang));
 
         if (engine.isFinished()) {
             root.str("result", engine.getResult().describe());

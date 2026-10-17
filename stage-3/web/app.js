@@ -145,7 +145,9 @@ function applyStaticTexts() {
 
 async function load() {
   try {
-    const response = await fetch('/api/state');
+    // The server renders messages and turn events in this language, so the page never
+    // has to translate anything itself.
+    const response = await fetch('/api/state?lang=' + encodeURIComponent(lang));
     state = await response.json();
     render();
   } catch (error) {
@@ -158,6 +160,7 @@ async function act(params) {
   for (const [key, value] of Object.entries(params)) {
     query.set(key, String(value));
   }
+  query.set('lang', lang);
   try {
     const response = await fetch('/api/action?' + query.toString(), { method: 'POST' });
     const payload = await response.json();
@@ -432,6 +435,8 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
     localStorage.setItem('rr-lang', lang);
     applyStaticTexts();
     render();
+    // Re-fetch so the last message and the turn events come back in the new language.
+    load();
   });
 });
 

@@ -98,7 +98,8 @@ public final class GameWebServer {
     // ------------------------------------------------------------------
 
     private void handleState(HttpExchange exchange) throws IOException {
-        respondJson(exchange, 200, session.stateJson());
+        Map<String, String> params = parseQuery(exchange.getRequestURI().getRawQuery());
+        respondJson(exchange, 200, session.stateJson(params.get("lang")));
     }
 
     private void handleAction(HttpExchange exchange) throws IOException {
@@ -106,7 +107,7 @@ public final class GameWebServer {
         int id = parseInt(params.get("id"), 0);
         boolean on = "true".equalsIgnoreCase(params.get("on")) || "1".equals(params.get("on"));
         respondJson(exchange, 200,
-                session.actionResponse(params.get("type"), params.get("task"), id, on));
+                session.actionResponse(params.get("type"), params.get("task"), id, on, params.get("lang")));
     }
 
     private void handleStatic(HttpExchange exchange) throws IOException {
