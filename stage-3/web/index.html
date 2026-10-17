@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Restaurant Rush</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="logo">🍽️</span><span data-i18n="appTitle">餐厅大作战</span></div>
+  <div class="chips">
+    <span class="chip" id="chipTurn">—</span>
+    <span class="chip" id="chipRevenue">—</span>
+    <span class="chip" id="chipPaid">—</span>
+    <span class="chip" id="chipSat">—</span>
+    <span class="chip" id="chipHappyHour">—</span>
+  </div>
+  <div class="lang-switch">
+    <button type="button" data-lang="zh" class="lang-btn active">中文</button>
+    <button type="button" data-lang="en" class="lang-btn">EN</button>
+  </div>
+</header>
+
+<div id="phaseBanner" class="phase-banner"></div>
+
+<main class="board">
+  <div class="column">
+    <section class="card" id="queueCard">
+      <h2><span class="icon">🧍</span><span data-i18n="queueTitle">等待队列</span></h2>
+      <div id="queueList" class="stack"></div>
+    </section>
+    <section class="card" id="historyCard">
+      <h2><span class="icon">🧾</span><span data-i18n="historyTitle">已离店顾客</span></h2>
+      <div id="historyList" class="stack"></div>
+    </section>
+  </div>
+
+  <section class="card tables-card" id="tablesCard">
+    <h2><span class="icon">🍽️</span><span data-i18n="tablesTitle">用餐区</span></h2>
+    <div id="tableList" class="table-grid"></div>
+  </section>
+
+  <section class="card" id="kitchenCard">
+    <h2><span class="icon">🍳</span><span data-i18n="kitchenTitle">厨房</span></h2>
+    <div id="orderList" class="stack"></div>
+  </section>
+</main>
+
+<footer class="actionbar" id="actionbar">
+  <div id="actionRows"></div>
+  <div class="actionbar-bottom">
+    <div class="toast" id="toast" role="status"></div>
+    <button type="button" class="end-turn" id="endTurnBtn" disabled data-i18n="endTurn">结束本回合</button>
+  </div>
+  <p class="hint" data-i18n="p1Hint">P1 预览：操作按钮将在下一步接入。</p>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>
