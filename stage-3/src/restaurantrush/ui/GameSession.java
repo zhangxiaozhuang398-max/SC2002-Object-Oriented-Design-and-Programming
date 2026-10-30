@@ -9,6 +9,7 @@ import restaurantrush.GameEngine;
 import restaurantrush.GameResult;
 import restaurantrush.GameSetup;
 import restaurantrush.GameState;
+import restaurantrush.MenuItem;
 import restaurantrush.Order;
 import restaurantrush.Table;
 import restaurantrush.WaiterTask;
@@ -31,6 +32,9 @@ public final class GameSession {
 
     private GameEngine engine;
 
+    /** Read-only: used to show the arrival schedule, never to drive the game. */
+    private final GameSetup schedule = new GameSetup();
+
     /** Every accepted command, in order, so the boundary can replay the game. */
     private final List<Action> history = new ArrayList<>();
 
@@ -40,6 +44,14 @@ public final class GameSession {
     private boolean chefAssigned;
     private String lastMessage = "";
     private List<String> lastEvents = List.of();
+
+    /** What each role did this turn, shown next to that role's step. */
+    private String hostMessage;
+    private String waiterMessage;
+    private String chefMessage;
+
+    /** One entry per finished turn, so the page can show a shift log. */
+    private final List<TurnRecord> log = new ArrayList<>();
 
     public GameSession() {
         newGame();
@@ -53,6 +65,14 @@ public final class GameSession {
         chefAssigned = false;
         lastMessage = "";
         lastEvents = List.of();
+        clearRoleMessages();
+        log.clear();
+    }
+
+    private void clearRoleMessages() {
+        hostMessage = null;
+        waiterMessage = null;
+        chefMessage = null;
     }
 
     // ------------------------------------------------------------------
@@ -140,6 +160,19 @@ public final class GameSession {
         }
     }
 
+    /** The events of one finished turn, kept for the shift log. */
+    private static final class TurnRecord {
+        private final int turn;
+        private final boolean happyHour;
+        private final List<String> events;
+
+        private TurnRecord(int turn, boolean happyHour, List<String> events) {
+            this.turn = turn;
+            this.happyHour = happyHour;
+            this.events = events;
+        }
+    }
+
     /** One accepted command, kept only so that it can be replayed. */
     private static final class Action {
         private final String type;
@@ -164,6 +197,7 @@ public final class GameSession {
                 hostAssigned = false;
                 waiterAssigned = false;
                 chefAssigned = false;
+                clearRoleMessages();
                 lastEvents = List.of();
                 lastMessage = on ? "Happy Hour activated for this turn." : "Turn started.";
                 return lastMessage;
@@ -171,6 +205,7 @@ public final class GameSession {
             case "host" -> {
                 String message = engine.assignHost(isWait(task) ? 0 : id);
                 hostAssigned = true;
+                hostMessage = message;
                 lastMessage = message;
                 return message;
             }
@@ -179,21 +214,27 @@ public final class GameSession {
                         task == null ? "" : task.toUpperCase(Locale.ROOT));
                 String message = engine.assignWaiter(waiterTask, id);
                 waiterAssigned = true;
+                waiterMessage = message;
                 lastMessage = message;
                 return message;
             }
             case "chef" -> {
                 String message = engine.assignChef(isWait(task) ? 0 : id);
                 chefAssigned = true;
+                chefMessage = message;
                 lastMessage = message;
                 return message;
             }
             case "finish" -> {
+                // Read before finishTurn(), which counts the Happy Hour turn down.
+                boolean happyHourTurn = engine.getHappyHourRemaining() > 0;
                 List<String> events = engine.finishTurn();
+                log.add(new TurnRecord(engine.getTurn(), happyHourTurn, events));
                 turnOpen = false;
                 hostAssigned = false;
                 waiterAssigned = false;
                 chefAssigned = false;
+                clearRoleMessages();
                 lastEvents = events;
                 lastMessage = "Turn " + engine.getTurn() + " finished.";
                 return lastMessage;
@@ -235,8 +276,11 @@ public final class GameSession {
                 .str("averageSatisfaction", state.averageSatisfactionText())
                 .value("happyHour", new Json.Obj()
                         .bool("used", engine.hasUsedHappyHour())
+                        .bool("active", engine.getHappyHourRemaining() > 0)
                         .num("remaining", engine.getHappyHourRemaining())
                         .toString())
+                .value("arrivals", arrivalsJson())
+                .value("menu", Json.array(menu(state)))
                 .value("targets", new Json.Obj()
                         .num("paid", GameResult.PAID_TARGET)
                         .num("revenueCents", GameResult.REVENUE_TARGET_CENTS)
@@ -247,11 +291,19 @@ public final class GameSession {
                         .bool("waiter", waiterAssigned)
                         .bool("chef", chefAssigned)
                         .toString())
-                .value("waiting", Json.array(customers(state.getWaiting())))
+                .value("roleMessages", new Json.Obj()
+                        .str("host", Messages.localise(hostMessage, lang))
+                        .str("waiter", Messages.localise(waiterMessage, lang))
+                        .str("chef", Messages.localise(chefMessage, lang))
+                        .toString())
+                .value("targetsNow", targetsJson(state))
+                .value("waiting", Json.array(customers(state, state.getWaiting())))
                 .value("tables", Json.array(tables(state)))
+                .value("customers", Json.array(customers(state, state.getCustomers())))
                 .value("orders", Json.array(orders(state.getOrders())))
                 .value("kitchen", Json.array(activeOrders(state.getOrders())))
                 .value("history", Json.array(history(state)))
+                .value("log", logJson(lang))
                 .str("message", Messages.localise(message == null ? lastMessage : message, lang))
                 .value("events", eventsJson(lang));
 
@@ -273,21 +325,106 @@ public final class GameSession {
         return turnOpen ? "DECIDING" : "BETWEEN_TURNS";
     }
 
-    private static List<String> customers(List<Customer> list) {
+    private static List<String> customers(GameState state, List<Customer> list) {
         List<String> items = new ArrayList<>();
         for (Customer customer : list) {
-            items.add(customer(customer));
+            items.add(customer(state, customer));
         }
         return items;
     }
 
-    private static String customer(Customer customer) {
+    private static String customer(GameState state, Customer customer) {
+        Order order = state.orderFor(customer.getId());
         return new Json.Obj()
                 .num("id", customer.getId())
                 .str("type", customer.getType())
                 .str("status", customer.getStatus().name())
                 .num("satisfaction", customer.getSatisfaction())
+                .value("order", order == null ? "null" : order(order))
                 .toString();
+    }
+
+    private static List<String> menu(GameState state) {
+        List<String> items = new ArrayList<>();
+        for (MenuItem item : state.getMenu().getItems()) {
+            items.add(new Json.Obj()
+                    .str("name", item.getName())
+                    .num("priceCents", item.getPriceCents())
+                    .num("units", item.getPreparationUnits())
+                    .toString());
+        }
+        return items;
+    }
+
+    /**
+     * The IDs each role can sensibly act on right now - the same lists the console
+     * prints under each prompt ({@code ConsoleView}). They guide the player; the
+     * engine still decides whether a move is legal.
+     */
+    private static String targetsJson(GameState state) {
+        boolean freeTable = state.getTables().stream().anyMatch(Table::isFree);
+        List<String> seat = new ArrayList<>();
+        if (freeTable) {
+            for (Customer customer : state.getWaiting()) {
+                seat.add(Integer.toString(customer.getId()));
+            }
+        }
+        List<String> order = new ArrayList<>();
+        for (Customer customer : state.getCustomers()) {
+            if (customer.getStatus() == Customer.Status.SEATED) {
+                order.add(Integer.toString(customer.getId()));
+            }
+        }
+        List<String> serve = new ArrayList<>();
+        List<String> cook = new ArrayList<>();
+        for (Order item : state.getOrders()) {
+            if (item.getStatus() == Order.Status.READY) {
+                serve.add(Integer.toString(item.getCustomerId()));
+            }
+            if (item.canPrepare()) {
+                cook.add(Integer.toString(item.getId()));
+            }
+        }
+        return new Json.Obj()
+                .bool("freeTable", freeTable)
+                .value("seat", Json.array(seat))
+                .value("order", Json.array(order))
+                .value("serve", Json.array(serve))
+                .value("cook", Json.array(cook))
+                .toString();
+    }
+
+    private String arrivalsJson() {
+        List<String> turns = new ArrayList<>();
+        int next = 0;
+        // While a turn is open, that turn's arrival has already happened.
+        int after = turnOpen ? engine.getTurn() : engine.getTurn() - 1;
+        for (int turn = 1; turn <= GameSetup.MAX_TURNS; turn++) {
+            if (schedule.hasArrival(turn)) {
+                turns.add(Integer.toString(turn));
+                if (next == 0 && turn > after) {
+                    next = turn;
+                }
+            }
+        }
+        return new Json.Obj()
+                .value("turns", Json.array(turns))
+                .num("next", next)
+                .toString();
+    }
+
+    private String logJson(String lang) {
+        List<String> items = new ArrayList<>();
+        for (TurnRecord record : log) {
+            items.add(new Json.Obj()
+                    .num("turn", record.turn)
+                    .bool("happyHour", record.happyHour)
+                    .value("events", Json.array(record.events.stream()
+                            .map(event -> Json.string(Messages.localise(event, lang)))
+                            .toList()))
+                    .toString());
+        }
+        return Json.array(items);
     }
 
     private static List<String> tables(GameState state) {
@@ -296,7 +433,7 @@ public final class GameSession {
             Customer occupant = table.getCustomer();
             items.add(new Json.Obj()
                     .num("id", table.getId())
-                    .value("customer", occupant == null ? "null" : customer(occupant))
+                    .value("customer", occupant == null ? "null" : customer(state, occupant))
                     .toString());
         }
         return items;
@@ -305,17 +442,21 @@ public final class GameSession {
     private static List<String> orders(List<Order> list) {
         List<String> items = new ArrayList<>();
         for (Order order : list) {
-            items.add(new Json.Obj()
-                    .num("id", order.getId())
-                    .num("customerId", order.getCustomerId())
-                    .str("name", order.getItem().getName())
-                    .num("priceCents", order.getBillCents())
-                    .str("status", order.getStatus().name())
-                    .num("done", order.getCompletedUnits())
-                    .num("total", order.getItem().getPreparationUnits())
-                    .toString());
+            items.add(order(order));
         }
         return items;
+    }
+
+    private static String order(Order order) {
+        return new Json.Obj()
+                .num("id", order.getId())
+                .num("customerId", order.getCustomerId())
+                .str("name", order.getItem().getName())
+                .num("priceCents", order.getBillCents())
+                .str("status", order.getStatus().name())
+                .num("done", order.getCompletedUnits())
+                .num("total", order.getItem().getPreparationUnits())
+                .toString();
     }
 
     /**
@@ -342,7 +483,7 @@ public final class GameSession {
                 left.add(customer);
             }
         }
-        return customers(left);
+        return customers(state, left);
     }
 
     // ------------------------------------------------------------------

@@ -30,8 +30,10 @@ web.bat --preview  scripted mid-game state, for reviewing the layout
 
 - Served from `http://127.0.0.1:8765` (the next free port if that one is busy);
   entirely offline, using the JDK's built-in `jdk.httpserver` - no libraries.
-- Chinese / English toggle, state panels for the queue, tables and kitchen, and
-  buttons for the four decisions of a turn.
+- Follows the console presentation: welcome page, a step-by-step turn panel
+  (Happy Hour -> Host -> Waiter -> Chef -> Cashier) listing each role's current
+  targets, end-of-turn summary, shift log and a final results page.
+- Chinese / English toggle, undo, light and dark themes.
 - `--no-browser` skips opening the browser (for headless checks).
 
 The command-line interface remains the primary entry point and is unchanged.

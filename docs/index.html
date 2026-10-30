@@ -263,9 +263,14 @@ stage-3\web.bat --preview    :: same as: start.bat preview</code></pre>
         and the browser opens automatically.</li>
       <li>Uses the JDK's built-in <code>jdk.httpserver</code>, so it is still dependency-free and
         fully offline; nothing ever leaves the machine.</li>
-      <li>Panels for the waiting queue, the two tables, the kitchen and the customers who have
-        left, with a button per decision: seat, order, serve, cook, wait.</li>
-      <li>Chinese / English toggle in the top-right corner; the choice is remembered.</li>
+      <li>Mirrors the console screens: a welcome page with the menu, goals and rules; a turn
+        panel that walks through Happy Hour → Host → Waiter → Chef → Cashier and offers only the
+        targets the console lists for each role; an end-of-turn summary and a shift log; and a
+        results page with every guest's final status.</li>
+      <li>Live goal tracker, Happy Hour status, turn timeline with arrival markers, and boards
+        for the queue, tables, kitchen and guests who have left.</li>
+      <li>Undo (button or Ctrl+Z), Chinese / English toggle (remembered), light and dark themes,
+        and a layout that works down to phone width.</li>
       <li><code>--no-browser</code> starts the server without opening a browser.</li>
     </ul>
   </section>
@@ -526,9 +531,12 @@ stage-3\web.bat --preview    :: 等同 start.bat preview</code></pre>
         自动打开浏览器。</li>
       <li>用的是 JDK 自带的 <code>jdk.httpserver</code>，所以依然零依赖、完全离线，数据不出
         本机。</li>
-      <li>面板包含等待队列、两张桌子、厨房、已离店顾客；每一步操作都有对应按钮：落座 / 下单
-        / 上菜 / 做菜 / 等待。</li>
-      <li>右上角可切换中文 / English，选择会被记住。</li>
+      <li>与命令行界面一一对应：开局有欢迎页（菜单、目标、玩法）；回合面板按 欢乐时光 → 迎宾 →
+        服务员 → 厨师 → 收银员 的顺序逐步进行，每个岗位只列出命令行同样会提示的可选目标；
+        每回合有结算小结和营业日志；终局有结算页，列出每位顾客的最终状态。</li>
+      <li>实时目标进度（付款人数、营收、平均满意度）、欢乐时光状态、带到店标记的回合时间轴，以及
+        等待队列、餐桌、厨房、已离店顾客面板。</li>
+      <li>支持撤销（按钮或 Ctrl+Z）、中英切换（会被记住）、浅色 / 深色主题，手机宽度也能正常使用。</li>
       <li><code>--no-browser</code> 只起服务不开浏览器。</li>
     </ul>
   </section>

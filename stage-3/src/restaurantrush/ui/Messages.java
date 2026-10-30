@@ -31,6 +31,13 @@ final class Messages {
             Map.entry("READY_TO_PAY", "待付款"),
             Map.entry("LEFT", "已离店"));
 
+    /** Menu item names that appear inside messages. */
+    private static final Map<String, String> DISHES = Map.of(
+            "Burger", "汉堡",
+            "Salad", "沙拉",
+            "Pasta", "意面",
+            "Salad + Pasta Combo", "沙拉 + 意面套餐");
+
     private Messages() {
     }
 
@@ -68,9 +75,12 @@ final class Messages {
         return out;
     }
 
-    /** Translates a bare status name; other values pass through unchanged. */
+    /** Translates a bare status or dish name; other values pass through unchanged. */
     private static String word(String value) {
         String translated = STATUS.get(value);
+        if (translated == null) {
+            translated = DISHES.get(value);
+        }
         return translated == null ? value : translated;
     }
 
@@ -92,15 +102,15 @@ final class Messages {
     private static final List<Rule> RULES = List.of(
             // ---- what the staff report after a successful action ----
             rule("Host seated customer (\\d+)\\.",
-                    "迎宾安排 C{1} 落座。"),
+                    "迎宾安排顾客 #{1} 落座。"),
             rule("Waiter seated customer (\\d+)\\.",
-                    "服务员安排 C{1} 落座。"),
+                    "服务员安排顾客 #{1} 落座。"),
             rule("Waiter served order (\\d+)\\. Customer (\\d+) is eating\\.",
-                    "服务员上了 {1} 号订单，C{2} 开始用餐。"),
+                    "服务员上了订单 #{1}，顾客 #{2} 开始用餐。"),
             rule("Customer (\\d+) chose (.+?)\\. Order (\\d+): (\\$[\\d.]+), (\\d+) preparation unit\\(s\\)\\.",
-                    "C{1} 点了{2}。{3} 号订单：{4}，需要 {5} 个准备单位。"),
+                    "顾客 #{1} 点了{2}。订单 #{3}：{4}，需要 {5} 个准备单位。"),
             rule("Chef advanced order (\\d+): (\\d+)/(\\d+), ([A-Z_]+)\\.",
-                    "厨师推进了 {1} 号订单：{2}/{3}，状态{4}。"),
+                    "厨师推进了订单 #{1}：{2}/{3}，状态{4}。"),
             rule("Host waits\\.",
                     "迎宾选择等待。"),
             rule("Waiter waits\\.",
@@ -124,11 +134,11 @@ final class Messages {
 
             // ---- end-of-turn events ----
             rule("Customer (\\d+) is READY_TO_PAY; payment is possible next turn\\.",
-                    "C{1} 用餐完毕（待付款），下一回合起可以收钱。"),
+                    "顾客 #{1} 用餐完毕（待付款），下一回合起可以收钱。"),
             rule("Cashier collected (\\$[\\d.]+) from customer (\\d+); table released\\.",
-                    "收银员向 C{2} 收取 {1}，桌子已空出。"),
+                    "收银员向顾客 #{2} 收取 {1}，桌子已空出。"),
             rule("Customer (\\d+) left unhappy; any unserved order was cancelled\\.",
-                    "C{1} 满意度归零离店，未完成的订单已取消。"),
+                    "顾客 #{1} 满意度归零离店，未完成的订单已取消。"),
 
             // ---- refused actions: the messages the player sees most often ----
             rule("Start a turn first\\.",
@@ -174,9 +184,9 @@ final class Messages {
             rule("No order with ID (\\d+)\\.",
                     "没有 ID 为 {1} 的订单。"),
             rule("Order (\\d+) cannot be prepared: ([A-Z_]+)\\.",
-                    "{1} 号订单无法继续准备：当前状态{2}。"),
+                    "订单 #{1} 无法继续准备：当前状态{2}。"),
             rule("Order (\\d+) is ([A-Z_]+), expected ([A-Z_]+)\\.",
-                    "{1} 号订单当前是{2}，需要是{3}。"),
+                    "订单 #{1} 当前是{2}，需要是{3}。"),
             rule("Only an unserved order can be cancelled\\.",
                     "只有还没上菜的订单可以取消。"),
             rule("Table (\\d+) is already occupied by (.+)\\.",
@@ -186,7 +196,7 @@ final class Messages {
             rule("The table is released only after payment or departure\\.",
                     "桌子只会在顾客付款或离店后空出来。"),
             rule("Customer (\\d+) is ([A-Z_]+), expected ([A-Z_]+)\\.",
-                    "C{1} 当前是{2}，需要是{3}。"),
+                    "顾客 #{1} 当前是{2}，需要是{3}。"),
             rule("Customer has not left\\.",
                     "这位顾客还没有离店。"),
             rule("Unknown action type: (.*)",

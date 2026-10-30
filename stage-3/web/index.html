@@ -4,60 +4,81 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Restaurant Rush</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand"><span class="logo">🍽️</span><span data-i18n="appTitle">餐厅大作战</span></div>
-  <div class="chips">
-    <span class="chip" id="chipTurn">—</span>
-    <span class="chip" id="chipRevenue">—</span>
-    <span class="chip" id="chipPaid">—</span>
-    <span class="chip" id="chipSat">—</span>
-    <span class="chip" id="chipHappyHour">—</span>
+  <div class="brand">
+    <span class="logo" aria-hidden="true">🍽️</span>
+    <div>
+      <div class="brand-title" data-i18n="appTitle">餐厅大作战</div>
+      <div class="brand-sub" id="stageName"></div>
+    </div>
   </div>
-  <div class="lang-switch">
-    <button type="button" data-lang="zh" class="lang-btn active">中文</button>
-    <button type="button" data-lang="en" class="lang-btn">EN</button>
+  <div class="turn-track" id="turnTrack" aria-live="polite">
+    <div class="turn-label" id="turnLabel">—</div>
+    <div class="turn-ticks" id="turnTicks"></div>
+  </div>
+  <div class="top-actions">
+    <button type="button" class="icon-btn" id="helpBtn" data-i18n-title="helpTitle" title="玩法说明">?</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button type="button" data-lang="zh" class="lang-btn active">中文</button>
+      <button type="button" data-lang="en" class="lang-btn">EN</button>
+    </div>
   </div>
 </header>
 
-<div id="phaseBanner" class="phase-banner"></div>
+<div class="offline" id="offline" hidden></div>
+
+<section class="goals" id="goals" aria-label="Goals"></section>
 
 <main class="board">
-  <div class="column">
-    <section class="card" id="queueCard">
-      <h2><span class="icon">🧍</span><span data-i18n="queueTitle">等待队列</span></h2>
-      <div id="queueList" class="stack"></div>
-    </section>
-    <section class="card" id="historyCard">
-      <h2><span class="icon">🧾</span><span data-i18n="historyTitle">已离店顾客</span></h2>
-      <div id="historyList" class="stack"></div>
-    </section>
-  </div>
+  <aside class="control" id="control">
+    <section class="card turn-card" id="turnCard"></section>
+  </aside>
 
-  <section class="card tables-card" id="tablesCard">
+  <section class="card area-dining">
     <h2><span class="icon">🍽️</span><span data-i18n="tablesTitle">用餐区</span></h2>
     <div id="tableList" class="table-grid"></div>
   </section>
 
-  <section class="card" id="kitchenCard">
-    <h2><span class="icon">🍳</span><span data-i18n="kitchenTitle">厨房</span></h2>
+  <section class="card area-queue">
+    <h2><span class="icon">🧍</span><span data-i18n="queueTitle">等待队列</span><span class="count" id="queueCount"></span></h2>
+    <div id="queueList" class="stack"></div>
+    <p class="note" id="arrivalNote"></p>
+  </section>
+
+  <section class="card area-kitchen">
+    <h2><span class="icon">🍳</span><span data-i18n="kitchenTitle">厨房</span><span class="count" id="kitchenCount"></span></h2>
     <div id="orderList" class="stack"></div>
+  </section>
+
+  <section class="card area-history">
+    <h2><span class="icon">🧾</span><span data-i18n="historyTitle">已离店顾客</span></h2>
+    <div id="historyList" class="stack"></div>
+  </section>
+
+  <section class="card area-log">
+    <h2><span class="icon">📜</span><span data-i18n="logTitle">营业日志</span></h2>
+    <div id="logList" class="log"></div>
   </section>
 </main>
 
-<footer class="actionbar" id="actionbar">
-  <div id="startPanel" class="start-panel" hidden></div>
-  <div id="actionRows"></div>
-  <div class="actionbar-bottom">
-    <div class="toast" id="toast" role="status"></div>
-    <button type="button" class="undo" id="undoBtn" disabled data-i18n="undo">↶ 撤销</button>
-    <button type="button" class="end-turn" id="endTurnBtn" disabled data-i18n="endTurn">结束本回合</button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="overlay" id="welcome" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <div id="welcomeBody"></div>
   </div>
-  <p class="hint" data-i18n="hint">点一个按钮就是做一次决定；不合法的操作会被拦下并告诉你原因。三个岗位都决定好之后，结束本回合。</p>
-</footer>
+</div>
+
+<div class="overlay" id="results" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
+    <div id="resultsBody"></div>
+  </div>
+</div>
 
 <script src="/app.js"></script>
 </body>
