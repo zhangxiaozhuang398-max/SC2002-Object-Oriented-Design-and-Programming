@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,7 +13,7 @@
   <div class="brand">
     <span class="logo" aria-hidden="true">🍽️</span>
     <div>
-      <div class="brand-title" data-i18n="appTitle">餐厅大作战</div>
+      <div class="brand-title" data-i18n="appTitle">Restaurant Rush</div>
       <div class="brand-sub" id="stageName"></div>
     </div>
   </div>
@@ -22,11 +22,11 @@
     <div class="turn-ticks" id="turnTicks"></div>
   </div>
   <div class="top-actions">
-    <div class="stage-switch" id="stageSwitch" role="group" data-i18n-title="stagePickerTitle" title="选择关卡"></div>
-    <button type="button" class="icon-btn" id="helpBtn" data-i18n-title="helpTitle" title="玩法说明">?</button>
+    <div class="stage-switch" id="stageSwitch" role="group" data-i18n-title="stagePickerTitle" title="Choose a stage"></div>
+    <button type="button" class="icon-btn" id="helpBtn" data-i18n-title="helpTitle" title="How to play">?</button>
     <div class="lang-switch" role="group" aria-label="Language">
-      <button type="button" data-lang="zh" class="lang-btn active">中文</button>
-      <button type="button" data-lang="en" class="lang-btn">EN</button>
+      <button type="button" data-lang="zh" class="lang-btn">中文</button>
+      <button type="button" data-lang="en" class="lang-btn active">EN</button>
     </div>
   </div>
 </header>
@@ -41,28 +41,28 @@
   </aside>
 
   <section class="card area-dining">
-    <h2><span class="icon">🍽️</span><span data-i18n="tablesTitle">用餐区</span></h2>
+    <h2><span class="icon">🍽️</span><span data-i18n="tablesTitle">Dining area</span></h2>
     <div id="tableList" class="table-grid"></div>
   </section>
 
   <section class="card area-queue">
-    <h2><span class="icon">🧍</span><span data-i18n="queueTitle">等待队列</span><span class="count" id="queueCount"></span></h2>
+    <h2><span class="icon">🧍</span><span data-i18n="queueTitle">Waiting queue</span><span class="count" id="queueCount"></span></h2>
     <div id="queueList" class="stack"></div>
     <p class="note" id="arrivalNote"></p>
   </section>
 
   <section class="card area-kitchen">
-    <h2><span class="icon">🍳</span><span data-i18n="kitchenTitle">厨房</span><span class="count" id="kitchenCount"></span></h2>
+    <h2><span class="icon">🍳</span><span data-i18n="kitchenTitle">Kitchen</span><span class="count" id="kitchenCount"></span></h2>
     <div id="orderList" class="stack"></div>
   </section>
 
   <section class="card area-history">
-    <h2><span class="icon">🧾</span><span data-i18n="historyTitle">已离店顾客</span></h2>
+    <h2><span class="icon">🧾</span><span data-i18n="historyTitle">Guests who left</span></h2>
     <div id="historyList" class="stack"></div>
   </section>
 
   <section class="card area-log">
-    <h2><span class="icon">📜</span><span data-i18n="logTitle">营业日志</span></h2>
+    <h2><span class="icon">📜</span><span data-i18n="logTitle">Shift log</span></h2>
     <div id="logList" class="log"></div>
   </section>
 </main>

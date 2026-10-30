@@ -331,9 +331,9 @@ function readLang() {
   try {
     const fromUrl = new URLSearchParams(location.search).get('lang');
     if (fromUrl === 'zh' || fromUrl === 'en') return fromUrl;
-    return localStorage.getItem('rr-lang') || 'zh';
+    return localStorage.getItem('rr-lang') || 'en';
   } catch (ignored) {
-    return 'zh';
+    return 'en';
   }
 }
 
@@ -352,7 +352,7 @@ function features() {
 }
 
 function tr(key, vars) {
-  let text = (I18N[lang] && I18N[lang][key]) || I18N.zh[key] || key;
+  let text = (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
   if (vars) {
     for (const [name, value] of Object.entries(vars)) {
       text = text.replaceAll('{' + name + '}', String(value));
