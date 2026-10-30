@@ -34,6 +34,9 @@ web.bat --preview  scripted mid-game state, for reviewing the layout
   (Happy Hour -> Host -> Waiter -> Chef -> Cashier) listing each role's current
   targets, end-of-turn summary, shift log and a final results page.
 - Chinese / English toggle, undo, light and dark themes.
+- Stage 1, 2 or 3 can be chosen in the page. `web.ps1` / `web.sh` compile all three
+  stage folders (each into its own `build/web`), and the server loads each one with a
+  separate class loader, one game per stage.
 - `--no-browser` skips opening the browser (for headless checks).
 
 The command-line interface remains the primary entry point and is unchanged.

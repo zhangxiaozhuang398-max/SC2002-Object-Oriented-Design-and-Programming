@@ -1,5 +1,6 @@
-# Starts the web UI. Compiles every source file (including restaurantrush.ui),
-# starts the local server and opens the browser.
+# Starts the web UI. Compiles every source file of all three stages (each into its
+# own build/web, including its restaurantrush.ui session), starts the local server
+# and opens the browser. The stage is chosen in the page.
 #
 #   .\web.ps1            fresh game
 #   .\web.ps1 --preview  scripted mid-game state, for reviewing the layout
@@ -11,14 +12,20 @@ if (-not (Get-Command javac -ErrorAction SilentlyContinue)) {
     throw "javac was not found on PATH. Install a JDK 17 or newer and reopen the terminal."
 }
 
-$out = "build/web"
-New-Item -ItemType Directory -Path $out -Force | Out-Null
-
-# Relative paths only, so a non-ASCII folder name cannot corrupt them on the way to javac.
-$sources = @(Get-ChildItem -LiteralPath "src" -Recurse -Filter "*.java" | Resolve-Path -Relative)
-& javac -encoding UTF-8 --release 17 -d $out @sources
-if ($LASTEXITCODE -ne 0) {
-    throw "Compilation failed."
+foreach ($stage in @("..\stage-1", "..\stage-2", ".")) {
+    Push-Location -LiteralPath $stage
+    try {
+        $out = "build/web"
+        New-Item -ItemType Directory -Path $out -Force | Out-Null
+        # Relative paths only, so a non-ASCII folder name cannot corrupt them on the way to javac.
+        $sources = @(Get-ChildItem -LiteralPath "src" -Recurse -Filter "*.java" | Resolve-Path -Relative)
+        & javac -encoding UTF-8 --release 17 -d $out @sources
+        if ($LASTEXITCODE -ne 0) {
+            throw "Compilation failed in $stage."
+        }
+    } finally {
+        Pop-Location
+    }
 }
 
-& java -cp $out restaurantrush.ui.GameWebServer @args
+& java -cp "build/web" restaurantrush.ui.GameWebServer @args

@@ -12,6 +12,10 @@
  * (Happy Hour -> Host -> Waiter -> Chef -> Cashier), the target IDs the server
  * lists for each role, an end-of-turn summary, and a closing page with every
  * guest's final status.
+ *
+ * Every request carries the chosen stage (1, 2 or 3); the server keeps one game per
+ * stage. Stages without a Host or Happy Hour report that in `features`, and the
+ * page simply leaves those steps out.
  */
 
 const CUSTOMER_STATUS = {
@@ -50,6 +54,18 @@ const I18N = {
   zh: {
     appTitle: '餐厅大作战',
     helpTitle: '玩法说明',
+    stagePickerTitle: '选择关卡（每个关卡的进度分开保存）',
+    stageShort: '关卡 {n}',
+    stageChooseTitle: '选择关卡',
+    stage1Desc: '基础玩法：只有普通顾客，服务员一人包办落座、点单和上菜。',
+    stage2Desc: '加入贵宾和美食评论家，他们的耐心和点餐习惯各不相同。',
+    stage3Desc: '再加入迎宾、套餐和欢乐时光，完整版玩法。',
+    stageCurrent: '当前关卡',
+    stageUnavailable: '未编译',
+    stageKeepNote: '每个关卡的进度分开保存，随时可以切回来。',
+    changeStage: '🎚️ 换个关卡',
+    how1Basic: '每回合顺序：服务员 → 厨师 → 收银员（自动）。',
+    how3Basic: '服务员用顾客编号，厨师用订单编号。',
     queueTitle: '等待队列',
     historyTitle: '已离店顾客',
     tablesTitle: '用餐区',
@@ -170,6 +186,18 @@ const I18N = {
   en: {
     appTitle: 'Restaurant Rush',
     helpTitle: 'How to play',
+    stagePickerTitle: 'Choose a stage (each stage keeps its own game)',
+    stageShort: 'Stage {n}',
+    stageChooseTitle: 'Choose a stage',
+    stage1Desc: 'Basic game: Regular guests only; the Waiter seats, takes orders and serves.',
+    stage2Desc: 'Adds VIP and Critic guests, each with their own patience and ordering habits.',
+    stage3Desc: 'Adds the Host, a combo meal and Happy Hour — the full game.',
+    stageCurrent: 'Current',
+    stageUnavailable: 'Not compiled',
+    stageKeepNote: 'Each stage keeps its own game, so you can switch back any time.',
+    changeStage: '🎚️ Change stage',
+    how1Basic: 'Each turn: Waiter → Chef → Cashier (automatic).',
+    how3Basic: 'Use customer IDs for the Waiter and order IDs for the Chef.',
     queueTitle: 'Waiting queue',
     historyTitle: 'Guests who left',
     tablesTitle: 'Dining area',
@@ -287,9 +315,11 @@ const I18N = {
 };
 
 let lang = readLang();
+let stage = readStage();
+let stages = [];
 let state = null;
 let busy = false;
-let welcomeSeen = false;
+const welcomeSeen = new Set();
 let lastPhase = null;
 let toastTimer = 0;
 
@@ -305,6 +335,20 @@ function readLang() {
   } catch (ignored) {
     return 'zh';
   }
+}
+
+/** The stage to show: ?stage=N, then the last one played, then whatever the server defaults to. */
+function readStage() {
+  try {
+    const value = new URLSearchParams(location.search).get('stage') || localStorage.getItem('rr-stage');
+    return value ? parseInt(value, 10) || null : null;
+  } catch (ignored) {
+    return null;
+  }
+}
+
+function features() {
+  return (state && state.features) || { host: true, happyHour: true };
 }
 
 function tr(key, vars) {
@@ -395,10 +439,24 @@ function progressDots(done, total) {
 // Server
 // ------------------------------------------------------------------
 
+async function loadStages() {
+  try {
+    const response = await fetch('/api/stages', { cache: 'no-store' });
+    const payload = await response.json();
+    stages = payload.stages || [];
+    const usable = (n) => stages.some((s) => s.id === n && s.available);
+    if (!usable(stage)) stage = payload.default;
+  } catch (error) {
+    stages = [];
+    if (!stage) stage = 3;
+  }
+}
+
 async function load() {
   try {
     // The server renders messages and turn events in this language.
-    const response = await fetch('/api/state?lang=' + encodeURIComponent(lang), { cache: 'no-store' });
+    const response = await fetch('/api/state?stage=' + stage + '&lang=' + encodeURIComponent(lang),
+      { cache: 'no-store' });
     state = await response.json();
     setOffline(false);
     render();
@@ -407,12 +465,34 @@ async function load() {
   }
 }
 
+/** Switches to another stage. The server keeps one game per stage, so nothing is lost. */
+async function setStage(number) {
+  if (number === stage && state) return;
+  stage = number;
+  try { localStorage.setItem('rr-stage', String(stage)); } catch (ignored) { /* private mode */ }
+  syncUrl();
+  lastPhase = null;
+  closeOverlay('results');
+  await load();
+  if (!document.getElementById('welcome').hidden) renderWelcome();
+}
+
+/** Keeps ?stage= and ?lang= in the address bar in step with the page, if they are there. */
+function syncUrl() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has('stage') && !params.has('lang')) return;
+  if (params.has('stage')) params.set('stage', String(stage));
+  if (params.has('lang')) params.set('lang', lang);
+  history.replaceState(null, '', '?' + params.toString());
+}
+
 async function act(params) {
   if (busy) return;
   busy = true;
   document.body.classList.add('busy');
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) query.set(key, String(value));
+  query.set('stage', String(stage));
   query.set('lang', lang);
   try {
     const response = await fetch('/api/action?' + query.toString(), { method: 'POST' });
@@ -475,7 +555,20 @@ function render() {
   lastPhase = state.phase;
 }
 
+function renderStageSwitch() {
+  const buttons = (stages.length ? stages : [{ id: stage, name: state.stage, available: true }]).map((s) =>
+    h('button.stage-btn' + (s.id === stage ? '.active' : ''), {
+      type: 'button',
+      title: s.available ? s.name : tr('stageUnavailable'),
+      disabled: !s.available || null,
+      'aria-pressed': s.id === stage ? 'true' : 'false',
+      onclick: () => setStage(s.id)
+    }, tr('stageShort', { n: s.id })));
+  fill('stageSwitch', buttons);
+}
+
 function renderTop() {
+  renderStageSwitch();
   document.getElementById('stageName').textContent = state.stage || '';
   const label = state.phase === 'NOT_STARTED' ? tr('turnLabelIdle', { m: state.maxTurns })
     : state.phase === 'FINISHED' ? tr('turnLabelDone', { m: state.maxTurns })
@@ -528,9 +621,9 @@ function renderGoals() {
         h('div', null, h('b', null, String(state.servedCount)), h('span', null, tr('statServed'))),
         h('div' + (state.unhappyDepartures > 0 ? '.bad' : ''), null,
           h('b', null, String(state.unhappyDepartures)), h('span', null, tr('statLeft'))))),
-    h('div.goal.hh' + (hh.active ? '.on' : '') + (hh.used && !hh.active ? '.spent' : ''), null,
+    features().happyHour ? h('div.goal.hh' + (hh.active ? '.on' : '') + (hh.used && !hh.active ? '.spent' : ''), null,
       h('div.goal-head', null, h('span.goal-icon', null, '☀️'), h('span.goal-label', null, tr('hhTitle'))),
-      h('div.hh-text', null, hhText)));
+      h('div.hh-text', null, hhText)) : null);
 }
 
 // ---------- customers ----------
@@ -681,32 +774,43 @@ function startPanel() {
   }
 
   const hh = state.happyHour;
-  const info = [];
-  if (!hh.used) info.push(tr('hhIntro1'), tr('hhIntro2'), tr('hhIntro3'));
-  else if (hh.active) info.push(tr('hhAlreadyActive'));
-  else info.push(tr('hhEnded'));
-  nodes.push(h('div.hh-box' + (hh.active ? '.on' : ''), null,
-    h('div.hh-box-title', null, '☀️ ' + tr('hhTitle')),
-    info.map((line) => h('div.hh-line', null, line))));
+  const withHappyHour = features().happyHour;
+  if (withHappyHour) {
+    const info = [];
+    if (!hh.used) info.push(tr('hhIntro1'), tr('hhIntro2'), tr('hhIntro3'));
+    else if (hh.active) info.push(tr('hhAlreadyActive'));
+    else info.push(tr('hhEnded'));
+    nodes.push(h('div.hh-box' + (hh.active ? '.on' : ''), null,
+      h('div.hh-box-title', null, '☀️ ' + tr('hhTitle')),
+      info.map((line) => h('div.hh-line', null, line))));
+  }
 
   nodes.push(h('div.start-buttons', null,
-    hh.used ? null : pill(tr('activateAndStart'), () => act({ type: 'start', on: true }), { cls: 'sun' }),
+    !withHappyHour || hh.used ? null
+      : pill(tr('activateAndStart'), () => act({ type: 'start', on: true }), { cls: 'sun' }),
     pill(tr('startTurn', { n: state.turn + 1 }), () => act({ type: 'start', on: false }), { cls: 'primary' })));
   return nodes;
 }
 
 function decidingPanel() {
   const a = state.assignments;
-  const active = !a.host ? 'host' : !a.waiter ? 'waiter' : !a.chef ? 'chef' : 'end';
+  const withHost = features().host;
+  // The engine's order; a stage without a Host simply starts at the Waiter.
+  const roles = [
+    withHost ? ['host', '🛎️', tr('stepHost'), tr('stepHostDesc'), hostBody] : null,
+    ['waiter', '🧑‍🍳', tr('stepWaiter'), tr('stepWaiterDesc'), waiterBody],
+    ['chef', '🍳', tr('stepChef'), tr('stepChefDesc'), chefBody]
+  ].filter(Boolean);
+  const pending = roles.find(([key]) => !a[key]);
+  const active = pending ? pending[0] : 'end';
   const ready = active === 'end';
   return [
     h('div.turn-head', null, h('h2', null, '🗓️ ' + tr('turnLabel', { n: state.turn, m: state.maxTurns })), undoButton()),
     h('ol.steps', null,
-      step('host', 1, '🛎️', tr('stepHost'), tr('stepHostDesc'), a.host, active, hostBody),
-      step('waiter', 2, '🧑‍🍳', tr('stepWaiter'), tr('stepWaiterDesc'), a.waiter, active, waiterBody),
-      step('chef', 3, '🍳', tr('stepChef'), tr('stepChefDesc'), a.chef, active, chefBody),
+      roles.map(([key, icon, title, desc, body], index) =>
+        step(key, index + 1, icon, title, desc, a[key], active, body)),
       h('li.step.cashier' + (ready ? '.active' : '.locked'), null,
-        h('div.step-head', null, h('span.step-num', null, '4'), h('span.step-icon', null, '💵'),
+        h('div.step-head', null, h('span.step-num', null, String(roles.length + 1)), h('span.step-icon', null, '💵'),
           h('div', null, h('div.step-title', null, tr('stepCashier')), h('div.step-desc', null, tr('stepCashierDesc')))),
         h('div.step-body', null,
           h('button.end-turn' + (ready ? '.ready' : ''), {
@@ -791,20 +895,22 @@ function openOverlay(id) {
   if (id === 'results') renderResults();
   const box = document.getElementById(id);
   box.hidden = false;
+  box.scrollTop = 0;
   requestAnimationFrame(() => box.classList.add('open'));
   const focusable = box.querySelector('button.primary') || box.querySelector('button');
-  if (focusable) focusable.focus();
+  // Without preventScroll a long dialog would jump to its bottom button.
+  if (focusable) focusable.focus({ preventScroll: true });
 }
 
 function closeOverlay(id) {
   const box = document.getElementById(id);
   box.classList.remove('open');
   box.hidden = true;
-  if (id === 'welcome') welcomeSeen = true;
+  if (id === 'welcome') welcomeSeen.add(stage);
 }
 
 function renderOverlays() {
-  if (state.phase === 'NOT_STARTED' && !welcomeSeen && document.getElementById('welcome').hidden) {
+  if (state.phase === 'NOT_STARTED' && !welcomeSeen.has(stage) && document.getElementById('welcome').hidden) {
     openOverlay('welcome');
   } else if (!document.getElementById('welcome').hidden) {
     renderWelcome();
@@ -825,6 +931,10 @@ function renderWelcome() {
     h('td', null, dishEmoji(item.name) + ' ' + dishName(item.name)),
     h('td.num', null, money(item.priceCents)),
     h('td.num', null, progressDots(item.units, item.units), ' ' + item.units)));
+  const guestTypes = state.customerTypes && state.customerTypes.length ? state.customerTypes : ['Regular'];
+  const howKeys = features().host
+    ? ['how1', 'how2', 'how3', 'how4', 'how5', 'how6', 'how7']
+    : ['how1Basic', 'how2', 'how3Basic', 'how4', 'how5', 'how6', 'how7'];
 
   fill('welcomeBody',
     h('button.close-x', { type: 'button', 'aria-label': tr('close'), onclick: () => closeOverlay('welcome') }, '×'),
@@ -834,6 +944,7 @@ function renderWelcome() {
       h('h1', { id: 'welcomeTitle' }, tr('appTitle')),
       h('div.hero-stage', null, state.stage || ''),
       h('p.hero-lead', null, tr('welcomeLead'))),
+    stagePicker(),
     h('div.welcome-grid', null,
       h('section.panel', null,
         h('h3', null, '🗓️ ' + tr('shiftTitle')),
@@ -851,14 +962,33 @@ function renderWelcome() {
       h('section.panel', null,
         h('h3', null, '👥 ' + tr('guestsTitle')),
         h('ul.guest-types', null,
-          ['Regular', 'VIP', 'Critic'].map((type) => h('li', null, avatar(type, 'sm'),
+          guestTypes.map((type) => h('li', null, avatar(type, 'sm'),
             h('div', null, h('b', null, typeName(type)),
-              h('div.muted', null, tr(type === 'Regular' ? 'guestRegular' : type === 'VIP' ? 'guestVip' : 'guestCritic'))))))),
+              h('div.muted', null, tr(type === 'VIP' ? 'guestVip' : type === 'Critic' ? 'guestCritic' : 'guestRegular'))))))),
       h('section.panel', null,
         h('h3', null, '🎮 ' + tr('howTitle')),
-        h('ol.how-list', null, ['how1', 'how2', 'how3', 'how4', 'how5', 'how6', 'how7'].map((key) => h('li', null, tr(key)))))),
+        h('ol.how-list', null, howKeys.map((key) => h('li', null, tr(key)))))),
     h('div.dialog-actions', null,
       pill(tr('openRestaurant'), () => closeOverlay('welcome'), { cls: 'primary big' })));
+}
+
+/** Three cards, one per stage; picking one switches the game behind the welcome page. */
+function stagePicker() {
+  if (stages.length === 0) return null;
+  return h('section.panel.stage-picker', null,
+    h('h3', null, '🎚️ ' + tr('stageChooseTitle')),
+    h('div.stage-cards', null, stages.map((s) => h('button.stage-card' + (s.id === stage ? '.active' : ''), {
+      type: 'button',
+      disabled: !s.available || null,
+      'aria-pressed': s.id === stage ? 'true' : 'false',
+      onclick: () => setStage(s.id)
+    },
+      h('div.stage-card-head', null,
+        h('b', null, tr('stageShort', { n: s.id })),
+        s.id === stage ? h('span.pill.tone-good', null, tr('stageCurrent'))
+          : !s.available ? h('span.pill.tone-muted', null, tr('stageUnavailable')) : null),
+      h('div.stage-card-desc', null, tr('stage' + s.id + 'Desc'))))),
+    h('p.muted.small', null, tr('stageKeepNote')));
 }
 
 function renderResults() {
@@ -907,6 +1037,7 @@ function renderResults() {
     h('div.dialog-actions', null,
       pill(tr('playAgain'), () => act({ type: 'reset' }), { cls: 'primary big' }),
       pill(tr('undoLast'), () => act({ type: 'undo' })),
+      stages.length > 1 ? pill(tr('changeStage'), () => { closeOverlay('results'); openOverlay('welcome'); }) : null,
       pill(tr('viewBoard'), () => closeOverlay('results'), { cls: 'quiet' })));
 }
 
@@ -935,9 +1066,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     lang = btn.dataset.lang;
     try { localStorage.setItem('rr-lang', lang); } catch (ignored) { /* private mode */ }
-    if (new URLSearchParams(location.search).has('lang')) {
-      history.replaceState(null, '', '?lang=' + lang);
-    }
+    syncUrl();
     applyStaticTexts();
     render();
     // Re-fetch so the last message, turn events and log come back in the new language.
@@ -945,7 +1074,8 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
   });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   applyStaticTexts();
-  load();
+  await loadStages();
+  await load();
 });

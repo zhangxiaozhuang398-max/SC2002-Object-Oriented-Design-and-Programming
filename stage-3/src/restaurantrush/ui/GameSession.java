@@ -260,6 +260,11 @@ public final class GameSession {
         return stateJson(null, lang);
     }
 
+    /** The stage banner, so the web server can list the stages it hosts. */
+    public String stageName() {
+        return schedule.getStageName();
+    }
+
     private String stateJson(String message, String lang) {
         GameState state = engine.getState();
 
@@ -269,6 +274,11 @@ public final class GameSession {
                 .num("maxTurns", GameSetup.MAX_TURNS)
                 .str("phase", phase())
                 .bool("canUndo", !history.isEmpty())
+                .value("features", new Json.Obj()
+                        .bool("host", true)
+                        .bool("happyHour", true)
+                        .toString())
+                .value("customerTypes", customerTypesJson())
                 .num("revenueCents", state.getRevenueCents())
                 .num("paidCount", state.getPaidCount())
                 .num("servedCount", state.getServedCount())
@@ -411,6 +421,20 @@ public final class GameSession {
                 .value("turns", Json.array(turns))
                 .num("next", next)
                 .toString();
+    }
+
+    /** The customer types this stage's arrival schedule produces, in arrival order. */
+    private String customerTypesJson() {
+        List<String> types = new ArrayList<>();
+        for (int turn = 1; turn <= GameSetup.MAX_TURNS; turn++) {
+            if (schedule.hasArrival(turn)) {
+                String type = Json.string(schedule.createCustomer((turn - 1) / 3 + 1).getType());
+                if (!types.contains(type)) {
+                    types.add(type);
+                }
+            }
+        }
+        return Json.array(types);
     }
 
     private String logJson(String lang) {

@@ -154,6 +154,22 @@ button:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
   font-size: 13px;
 }
 .lang-btn.active { background: var(--mint); color: var(--ink); }
+.stage-switch { display: flex; background: var(--card); border-radius: 999px; padding: 4px; box-shadow: var(--shadow-sm); }
+.stage-switch:empty { display: none; }
+.stage-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.stage-btn:hover:not(:disabled):not(.active) { color: var(--ink); background: var(--sunken); }
+.stage-btn.active { background: var(--butter); color: var(--ink); }
+.stage-btn:disabled { opacity: .4; cursor: not-allowed; }
 
 .offline {
   background: var(--coral-soft);
@@ -166,7 +182,8 @@ button:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
 
 /* ---------- goals ---------- */
 
-.goals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, .8fr) minmax(0, 1fr); gap: 14px; }
+/* Four or five cards: Stages 1 and 2 have no Happy Hour card. */
+.goals { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
 .goal {
   background: var(--card);
   border-radius: 18px;
@@ -578,6 +595,25 @@ button:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
 .guest-types { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .guest-types li { display: flex; align-items: center; gap: 10px; font-size: 13px; }
 .how-list { padding-left: 20px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.stage-picker { margin-bottom: 14px; }
+.stage-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
+.stage-card {
+  text-align: left;
+  border: 2px solid var(--line);
+  background: var(--sunken);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color .15s ease, background .15s ease, transform .1s ease;
+}
+.stage-card:hover:not(:disabled) { border-color: var(--mint); transform: translateY(-1px); }
+.stage-card.active { border-color: var(--mint-deep); background: var(--mint-soft); }
+.stage-card:disabled { opacity: .5; cursor: not-allowed; }
+.stage-card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.stage-card-desc { font-size: 12.5px; color: var(--ink-soft); }
 .dialog-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 
 .check-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -614,12 +650,6 @@ button:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
 
 /* ---------- responsive ---------- */
 
-@media (max-width: 1280px) {
-  .goals { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .goals > :nth-child(-n+3) { grid-column: span 2; }
-  .goals > :nth-child(n+4) { grid-column: span 3; }
-}
-
 @media (max-width: 1100px) {
   .board {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -636,8 +666,8 @@ button:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
 @media (max-width: 720px) {
   body { padding: 14px 16px 28px; gap: 12px; }
   .goals { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .goals > :nth-child(n) { grid-column: auto; }
   .goals > .hh { grid-column: span 2; }
+  .stage-btn, .lang-btn { padding: 6px 9px; }
   .goal { padding: 10px 12px; }
   .brand-sub { display: none; }
   .goal-value, .stat-pair b { font-size: 18px; }
@@ -647,7 +677,7 @@ button:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
     gap: 12px;
   }
   .table-grid { grid-template-columns: 1fr; }
-  .welcome-grid, .check-grid { grid-template-columns: 1fr; }
+  .welcome-grid, .check-grid, .stage-cards { grid-template-columns: 1fr; }
   .dialog { padding: 22px 16px; border-radius: 22px; }
   .hero h1 { font-size: 26px; }
   .turn-track { order: 3; flex-basis: 100%; }

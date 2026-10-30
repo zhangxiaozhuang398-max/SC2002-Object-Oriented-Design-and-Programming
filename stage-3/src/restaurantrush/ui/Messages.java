@@ -199,6 +199,12 @@ final class Messages {
                     "顾客 #{1} 当前是{2}，需要是{3}。"),
             rule("Customer has not left\\.",
                     "这位顾客还没有离店。"),
+            rule("Happy Hour is not part of this stage\\.",
+                    "本关卡没有欢乐时光。"),
+            rule("There is no Host in this stage\\.",
+                    "本关卡没有迎宾。"),
+            rule("Unknown stage: (.*)",
+                    "没有这个关卡：{1}"),
             rule("Unknown action type: (.*)",
                     "无法识别的操作类型：{1}"));
 }

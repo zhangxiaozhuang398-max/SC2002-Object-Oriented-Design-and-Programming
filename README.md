@@ -78,6 +78,9 @@ stage-3\web.bat --preview    :: same as: start.bat preview
 
 - Served from `http://127.0.0.1:8765` — the next free port if that one is busy — and the
   browser opens automatically.
+- **All three stages in one page.** Pick Stage 1, 2 or 3 in the top bar or on the welcome
+  page. Each stage keeps its own game, so switching never loses progress. Stages 1 and 2
+  have no Host and no Happy Hour, so those steps simply do not appear.
 - Uses the JDK's built-in `jdk.httpserver`, so it is still dependency-free and fully
   offline; nothing ever leaves the machine.
 - Mirrors the console screens: a welcome page with the menu, goals and rules; a turn panel
@@ -167,9 +170,12 @@ combo rounding, and Happy Hour duration and lock-in.
 │    ├─ test/restaurantrush/            dependency-free test suite
 │    ├─ examples/                       victory and defeat replays
 │    └─ run / test scripts, README
+├─ stage-1/  stage-2/
+│    └─ src/restaurantrush/ui/          that stage's web session (state JSON, messages)
 └─ stage-3/
-     ├─ src/restaurantrush/ui/          web boundary (server, session, JSON writer)
-     └─ web/                            index.html, style.css, app.js
+     ├─ src/restaurantrush/ui/          web boundary (server, sessions, JSON writer)
+     ├─ web/                            index.html, style.css, app.js
+     └─ web.bat / web.ps1 / web.sh      compile all three stages and start the server
 ```
 
 ## Base setting
@@ -250,8 +256,14 @@ git diff --no-index stage-2/src stage-3/src
 The web front-end was added after `stage-3` and is a second boundary implementation over the
 same control and domain classes. Adding it required **no change to any rule class**; the only
 touch on existing code was extracting the three victory targets in `GameResult` into named
-constants, so that the rule and the UI read the same numbers from one place. That is a
-concrete, checkable example of keeping rules out of the UI.
+constants (in every stage), so that the rule and the UI read the same numbers from one place.
+That is a concrete, checkable example of keeping rules out of the UI.
+
+Playing every stage from one page keeps the stage folders independent. Each folder ships its
+own small `restaurantrush.ui.GameSession`, compiled against that stage's classes only. The
+server loads each stage's compiled classes with a separate class loader, so three
+`restaurantrush.GameEngine` classes can run side by side without seeing each other. All six
+supplied replays, run through the web API, reproduce the figures below exactly.
 
 ## Reproducible runs
 
