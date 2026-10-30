@@ -80,9 +80,15 @@ stage-3\web.bat --preview    :: same as: start.bat preview
   browser opens automatically.
 - Uses the JDK's built-in `jdk.httpserver`, so it is still dependency-free and fully
   offline; nothing ever leaves the machine.
-- Panels for the waiting queue, the two tables, the kitchen and the customers who have
-  left, with a button per decision: seat, order, serve, cook, wait.
-- Chinese / English toggle in the top-right corner; the choice is remembered.
+- Mirrors the console screens: a welcome page with the menu, goals and rules; a turn panel
+  that walks through Happy Hour → Host → Waiter → Chef → Cashier and offers only the
+  targets the console lists for each role; an end-of-turn summary and a shift log; and a
+  results page with every guest's final status.
+- Live goal tracker (paid guests, revenue, average paid satisfaction), Happy Hour status,
+  turn timeline with arrival markers, and boards for the queue, tables, kitchen and guests
+  who have left.
+- Undo (button or Ctrl+Z), Chinese / English toggle (remembered), light and dark themes,
+  and a layout that works down to phone width.
 - `--no-browser` starts the server without opening a browser (useful for a quick check).
 
 ## Command-line game (the primary interface)
@@ -106,6 +112,36 @@ mkdir -p build/classes
 javac -encoding UTF-8 --release 17 -d build/classes src/restaurantrush/*.java
 java -cp build/classes restaurantrush.Main
 ```
+
+## Console interface
+
+All three stages display a welcome banner, a menu and a short command guide.
+Each turn has separate status, queue, table, active-order, staff-action and
+end-of-turn sections. Commands include descriptions and current target IDs;
+long feedback wraps within a 72-column layout. Finished or cancelled orders
+leave the active-order display, and the closing page shows the final score,
+each guest's final status and a goodbye banner.
+
+Stage 3 also displays Happy Hour availability and remaining duration, and gives
+the Host a separate prompt. The input commands and turn order are unchanged;
+the supplied replay files work without extra menu choices or Enter presses.
+Plain ASCII output needs no terminal colours, screen-clearing support or libraries.
+Use a monospaced terminal font and a window at least 72 columns wide.
+
+`ConsoleUI` parses decisions and calls `GameEngine`; `ConsoleView` renders the
+screens and reads state for display. The view does not change game state or
+decide whether an action is valid. Both classes are included in each stage so
+that all three folders remain independently runnable. This presentation update
+is applied to the working source; the original stage tags remain historical snapshots.
+
+The visual reference is [FYPMS](https://github.com/pufanyi/FYPMS), particularly
+its welcome/exit pages and separators. The Restaurant Rush banners and layout
+are implemented for this game's commands and state.
+
+The web UI follows the same presentation: a welcome screen with the menu and goals, a
+step-by-step turn (Happy Hour → Host → Waiter → Chef → Cashier) that lists the current
+targets for each role, an end-of-turn summary, and a closing page with every guest's final
+status.
 
 ## Tests
 
